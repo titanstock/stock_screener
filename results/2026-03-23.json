@@ -1,0 +1,185 @@
+{
+  "date": "2026-03-23",
+  "strategies": {
+    "breakout": [],
+    "atr_squeeze": [],
+    "oversold_bounce": [
+      {
+        "code": "1418",
+        "name": "Interlife Holdings Co., Ltd.",
+        "close": 483.0,
+        "entry_price": 483.0,
+        "stop_loss": 453.2857142857143,
+        "take_profit": 557.2857142857143,
+        "stop_capped": false,
+        "rsi": 25.99902943124583,
+        "macd": -19.5098168287858,
+        "macd_signal": -16.1371521889233,
+        "macd_dir": "down"
+      },
+      {
+        "code": "211A",
+        "name": "Cados Corporation",
+        "close": 4005.0,
+        "entry_price": 4005.0,
+        "stop_loss": 3772.1428571428573,
+        "take_profit": 4587.142857142857,
+        "stop_capped": false,
+        "rsi": 27.204662630982256,
+        "macd": -110.00587510945843,
+        "macd_signal": -64.80373949101563,
+        "macd_dir": "down"
+      },
+      {
+        "code": "3683",
+        "name": "Cyberlinks Co., Ltd.",
+        "close": 951.0,
+        "entry_price": 951.0,
+        "stop_loss": 859.1428571428571,
+        "take_profit": 1180.6428571428573,
+        "stop_capped": false,
+        "rsi": 21.45212847694053,
+        "macd": -65.51925305823602,
+        "macd_signal": -54.23875939842584,
+        "macd_dir": "down"
+      }
+    ]
+  },
+  "performance": [
+    {
+      "code": "1418",
+      "name": "Interlife Holdings Co., Ltd.",
+      "entry_price": 483.0,
+      "stop_loss": 453.2857142857143,
+      "take_profit": 557.2857142857143,
+      "close_prev": 483.0,
+      "close_now": 483.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "2321",
+      "name": "Softfront Holdings",
+      "entry_price": 403.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 403.0,
+      "close_now": 237.0,
+      "change_pct": -41.19106699751861,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "3683",
+      "name": "Cyberlinks Co., Ltd.",
+      "entry_price": 951.0,
+      "stop_loss": 859.1428571428571,
+      "take_profit": 1180.6428571428573,
+      "close_prev": 951.0,
+      "close_now": 951.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "211A",
+      "name": "Cados Corporation",
+      "entry_price": 4005.0,
+      "stop_loss": 3772.1428571428573,
+      "take_profit": 4587.142857142857,
+      "close_prev": 4005.0,
+      "close_now": 4005.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "157A",
+      "name": "GREEN MONSTER INC",
+      "entry_price": 1746.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1746.0,
+      "close_now": 1122.0,
+      "change_pct": -35.738831615120276,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "8742",
+      "name": "Kobayashi Yoko Co., Ltd.",
+      "entry_price": 581.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 581.0,
+      "close_now": 490.0,
+      "change_pct": -15.66265060240964,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "7119",
+      "name": "halmek holdings Co.,Ltd.",
+      "entry_price": 1401.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1401.0,
+      "close_now": 1591.0,
+      "change_pct": 13.561741613133476,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 793.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 793.0,
+      "close_now": 643.0,
+      "change_pct": -18.915510718789406,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "6666",
+      "name": "River Eletec Corporation",
+      "entry_price": 680.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 680.0,
+      "close_now": 644.0,
+      "change_pct": -5.294117647058823,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    }
+  ]
+}

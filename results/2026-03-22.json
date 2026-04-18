@@ -1,0 +1,100 @@
+{
+  "date": "2026-03-22",
+  "strategies": {
+    "breakout": [],
+    "atr_squeeze": [],
+    "oversold_bounce": []
+  },
+  "performance": [
+    {
+      "code": "157A",
+      "name": "GREEN MONSTER INC",
+      "entry_price": 1746.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1746.0,
+      "close_now": 1122.0,
+      "change_pct": -35.738831615120276,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2321",
+      "name": "Softfront Holdings",
+      "entry_price": 403.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 403.0,
+      "close_now": 237.0,
+      "change_pct": -41.19106699751861,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "6666",
+      "name": "River Eletec Corporation",
+      "entry_price": 680.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 680.0,
+      "close_now": 644.0,
+      "change_pct": -5.294117647058823,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "7119",
+      "name": "halmek holdings Co.,Ltd.",
+      "entry_price": 1401.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1401.0,
+      "close_now": 1591.0,
+      "change_pct": 13.561741613133476,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 793.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 793.0,
+      "close_now": 643.0,
+      "change_pct": -18.915510718789406,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "8742",
+      "name": "Kobayashi Yoko Co., Ltd.",
+      "entry_price": 581.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 581.0,
+      "close_now": 490.0,
+      "change_pct": -15.66265060240964,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    }
+  ]
+}

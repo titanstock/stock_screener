@@ -1,0 +1,386 @@
+{
+  "date": "2026-04-13",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [
+      {
+        "code": "4932",
+        "name": "Almado, Inc.",
+        "close": 759.0,
+        "entry_price": 759.0,
+        "stop_loss": 723.0881168967279,
+        "take_profit": 848.7797077581802,
+        "stop_capped": false,
+        "rsi": 26.11115665906341,
+        "rsi30": 27.17766550931509,
+        "macd": -37.265138063030804,
+        "macd_signal": -38.63312162742456,
+        "macd_dir": "up"
+      },
+      {
+        "code": "7373",
+        "name": "Aidma Holdings, Inc.",
+        "close": 1333.0,
+        "entry_price": 1333.0,
+        "stop_loss": 1199.7,
+        "take_profit": 1666.25,
+        "stop_capped": true,
+        "rsi": 23.396108110318877,
+        "rsi30": 30.71763908716649,
+        "macd": -71.53063281240338,
+        "macd_signal": -60.239618239400734,
+        "macd_dir": "down"
+      }
+    ],
+    "vol_dry_bounce": [
+      {
+        "code": "160A",
+        "name": "AS PARTNERS CO  LTD",
+        "close": 2164.0,
+        "entry_price": 2164.0,
+        "stop_loss": 2043.106257959757,
+        "take_profit": 2466.234355100608,
+        "stop_capped": false,
+        "rsi": 47.273969486823404,
+        "rsi30": 44.46149806797304,
+        "macd": -27.531860745731137,
+        "macd_signal": -43.11211653271306,
+        "macd_dir": "up"
+      },
+      {
+        "code": "3913",
+        "name": "GreenBee, Inc.",
+        "close": 1053.0,
+        "entry_price": 1053.0,
+        "stop_loss": 959.8571428571429,
+        "take_profit": 1285.8571428571427,
+        "stop_capped": false,
+        "rsi": 48.57678385031927,
+        "rsi30": 43.12122403244548,
+        "macd": -21.254925658621914,
+        "macd_signal": -33.35786699612824,
+        "macd_dir": "up"
+      },
+      {
+        "code": "5248",
+        "name": "TECHNOLOGIES, Inc.",
+        "close": 455.0,
+        "entry_price": 455.0,
+        "stop_loss": 416.42857142857144,
+        "take_profit": 551.4285714285713,
+        "stop_capped": false,
+        "rsi": 43.77945106030711,
+        "rsi30": 42.56819505407864,
+        "macd": -11.52960007819911,
+        "macd_signal": -16.714373467913695,
+        "macd_dir": "up"
+      }
+    ],
+    "consec_bear_shadow": [],
+    "noa": []
+  },
+  "performance": [
+    {
+      "code": "4316",
+      "name": "BeMap, Inc.",
+      "entry_price": 241.0,
+      "stop_loss": 216.9,
+      "take_profit": 301.25,
+      "close_prev": 241.0,
+      "close_now": 226.0,
+      "change_pct": -6.224066390041494,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "265A",
+      "name": "HMCOMM INC",
+      "entry_price": 669.0,
+      "stop_loss": 602.1,
+      "take_profit": 836.25,
+      "close_prev": 669.0,
+      "close_now": 680.0,
+      "change_pct": 1.6442451420029895,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "3321",
+      "name": "Mitachi Co., Ltd.",
+      "entry_price": 1915.0,
+      "stop_loss": 1763.4285714285713,
+      "take_profit": 2293.9285714285716,
+      "close_prev": 1915.0,
+      "close_now": 1857.0,
+      "change_pct": -3.028720626631854,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "4932",
+      "name": "Almado, Inc.",
+      "entry_price": 759.0,
+      "stop_loss": 723.0881168967279,
+      "take_profit": 848.7797077581802,
+      "close_prev": 759.0,
+      "close_now": 762.0,
+      "change_pct": 0.3952569169960474,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "160A",
+      "name": "AS PARTNERS CO  LTD",
+      "entry_price": 2164.0,
+      "stop_loss": 2043.106257959757,
+      "take_profit": 2466.234355100608,
+      "close_prev": 2164.0,
+      "close_now": 2144.0,
+      "change_pct": -0.9242144177449169,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "5248",
+      "name": "TECHNOLOGIES, Inc.",
+      "entry_price": 455.0,
+      "stop_loss": 416.42857142857144,
+      "take_profit": 551.4285714285713,
+      "close_prev": 455.0,
+      "close_now": 460.0,
+      "change_pct": 1.098901098901099,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "3913",
+      "name": "GreenBee, Inc.",
+      "entry_price": 1053.0,
+      "stop_loss": 959.8571428571429,
+      "take_profit": 1285.8571428571427,
+      "close_prev": 1053.0,
+      "close_now": 1065.0,
+      "change_pct": 1.1396011396011396,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1333.0,
+      "stop_loss": 1199.7,
+      "take_profit": 1666.25,
+      "close_prev": 1333.0,
+      "close_now": 1324.0,
+      "change_pct": -0.6751687921980495,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "5574",
+      "name": "ABEJA, Inc.",
+      "entry_price": 2917.0,
+      "stop_loss": 2625.3,
+      "take_profit": 3646.2499999999995,
+      "close_prev": 2917.0,
+      "close_now": 3080.0,
+      "change_pct": 5.587932807679122,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "2673",
+      "name": "YUMEMITSUKETAI Co.,Ltd.",
+      "entry_price": 156.0,
+      "stop_loss": 140.4,
+      "take_profit": 195.0,
+      "close_prev": 156.0,
+      "close_now": 139.0,
+      "change_pct": -10.897435897435898,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "3917",
+      "name": "iRidge, Inc.",
+      "entry_price": 470.0,
+      "stop_loss": 436.42857142857144,
+      "take_profit": 553.9285714285713,
+      "close_prev": 470.0,
+      "close_now": 474.0,
+      "change_pct": 0.851063829787234,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "2193",
+      "name": "Cookpad Inc.",
+      "entry_price": 133.0,
+      "stop_loss": 120.57142857142857,
+      "take_profit": 164.07142857142858,
+      "close_prev": 133.0,
+      "close_now": 135.0,
+      "change_pct": 1.5037593984962405,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "8105",
+      "name": "Bitcoin Japan Corporation",
+      "entry_price": 121.0,
+      "stop_loss": 108.9,
+      "take_profit": 151.25,
+      "close_prev": 121.0,
+      "close_now": 123.0,
+      "change_pct": 1.6528925619834711,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "3195",
+      "name": "Generation Pass Co.,Ltd.",
+      "entry_price": 404.0,
+      "stop_loss": 363.6,
+      "take_profit": 504.99999999999994,
+      "close_prev": 404.0,
+      "close_now": 426.0,
+      "change_pct": 5.445544554455446,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "4667",
+      "name": "Aisan Technology Co.,Ltd.",
+      "entry_price": 1721.0,
+      "stop_loss": 1579.7408588503433,
+      "take_profit": 2074.147852874142,
+      "close_prev": 1721.0,
+      "close_now": 1741.0,
+      "change_pct": 1.1621150493898895,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "2180",
+      "name": "SUNNY SIDE UP GROUP Inc.",
+      "entry_price": 865.0,
+      "stop_loss": 805.5714285714286,
+      "take_profit": 1013.5714285714287,
+      "close_prev": 865.0,
+      "close_now": 915.0,
+      "change_pct": 5.780346820809249,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "1443",
+      "name": "Giken Holdings Co., Ltd.",
+      "entry_price": 290.0,
+      "stop_loss": 261.0,
+      "take_profit": 362.5,
+      "close_prev": 290.0,
+      "close_now": 301.0,
+      "change_pct": 3.793103448275862,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "6580",
+      "name": "Writeup Co.,Ltd.",
+      "entry_price": 931.0,
+      "stop_loss": 837.9,
+      "take_profit": 1163.75,
+      "close_prev": 931.0,
+      "close_now": 1168.0,
+      "change_pct": 25.456498388829218,
+      "hit_stop": false,
+      "hit_take": true,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "6803",
+      "name": "Teac Corporation",
+      "entry_price": 115.0,
+      "stop_loss": 103.5,
+      "take_profit": 143.75,
+      "close_prev": 115.0,
+      "close_now": 108.0,
+      "change_pct": -6.086956521739131,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "9127",
+      "name": "Tamai Steamship Co., Ltd.",
+      "entry_price": 3030.0,
+      "stop_loss": 2727.0,
+      "take_profit": 3787.5,
+      "close_prev": 3030.0,
+      "close_now": 2795.0,
+      "change_pct": -7.755775577557755,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,407 @@
+{
+  "date": "2026-03-29",
+  "strategies": {
+    "breakout": [],
+    "atr_squeeze": [
+      {
+        "code": "5729",
+        "name": "Nihon Seiko Co., Ltd.",
+        "close": 2627.5,
+        "entry_price": 2627.5,
+        "stop_loss": 2364.75,
+        "take_profit": 3021.625,
+        "stop_capped": true,
+        "rsi": 45.611712411456416,
+        "macd": -1792.715548965146,
+        "macd_signal": -1076.9953223602392,
+        "macd_dir": "down"
+      },
+      {
+        "code": "6803",
+        "name": "Teac Corporation",
+        "close": 115.0,
+        "entry_price": 115.0,
+        "stop_loss": 103.5,
+        "take_profit": 132.25,
+        "stop_capped": true,
+        "rsi": 49.18356360575552,
+        "macd": -1.4093661584659145,
+        "macd_signal": -0.15984169870391027,
+        "macd_dir": "down"
+      },
+      {
+        "code": "7774",
+        "name": "Japan Tissue Engineering Co., Ltd.",
+        "close": 693.0,
+        "entry_price": 693.0,
+        "stop_loss": 623.7,
+        "take_profit": 796.9499999999999,
+        "stop_capped": true,
+        "rsi": 54.13770042554751,
+        "macd": 9.42324863259239,
+        "macd_signal": 9.714153569261136,
+        "macd_dir": "down"
+      },
+      {
+        "code": "9367",
+        "name": "Daito Koun Co.,Ltd.",
+        "close": 2415.0,
+        "entry_price": 2415.0,
+        "stop_loss": 2295.1428571428573,
+        "take_profit": 2594.7857142857138,
+        "stop_capped": false,
+        "rsi": 49.707694467971194,
+        "macd": 28.838636831309486,
+        "macd_signal": 42.06096064803231,
+        "macd_dir": "down"
+      },
+      {
+        "code": "9385",
+        "name": "Shoei Corporation",
+        "close": 797.0,
+        "entry_price": 797.0,
+        "stop_loss": 764.8571428571429,
+        "take_profit": 845.2142857142857,
+        "stop_capped": false,
+        "rsi": 52.74454283554712,
+        "macd": 8.200308086683663,
+        "macd_signal": 15.160289481952354,
+        "macd_dir": "down"
+      }
+    ],
+    "oversold_bounce": [
+      {
+        "code": "6580",
+        "name": "Writeup Co.,Ltd.",
+        "close": 931.0,
+        "entry_price": 931.0,
+        "stop_loss": 837.9,
+        "take_profit": 1163.75,
+        "stop_capped": true,
+        "rsi": 24.451845947272744,
+        "macd": -256.73210072529105,
+        "macd_signal": -200.01099039351706,
+        "macd_dir": "down"
+      }
+    ],
+    "vol_dry_bounce": [
+      {
+        "code": "6803",
+        "name": "Teac Corporation",
+        "close": 115.0,
+        "entry_price": 115.0,
+        "stop_loss": 103.5,
+        "take_profit": 143.75,
+        "stop_capped": true,
+        "rsi": 49.18356360575552,
+        "macd": -1.4093661584659145,
+        "macd_signal": -0.15984169870391027,
+        "macd_dir": "down"
+      }
+    ],
+    "consec_bear_shadow": []
+  },
+  "performance": [
+    {
+      "code": "1909",
+      "name": "Nippon Dry-Chemical Co., Ltd.",
+      "entry_price": 2637.5,
+      "stop_loss": 2373.75,
+      "take_profit": 3296.875,
+      "close_prev": 2637.5,
+      "close_now": 2582.5,
+      "change_pct": -2.085308056872038,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "7774",
+      "name": "Japan Tissue Engineering Co., Ltd.",
+      "entry_price": 693.0,
+      "stop_loss": 623.7,
+      "take_profit": 796.9499999999999,
+      "close_prev": 693.0,
+      "close_now": 693.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型"
+      ]
+    },
+    {
+      "code": "338A",
+      "name": "ZENMUTECH INC",
+      "entry_price": 2825.0,
+      "stop_loss": 2542.5,
+      "take_profit": 3531.25,
+      "close_prev": 2825.0,
+      "close_now": 2825.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "6803",
+      "name": "Teac Corporation",
+      "entry_price": 115.0,
+      "stop_loss": 103.5,
+      "take_profit": 132.25,
+      "close_prev": 115.0,
+      "close_now": 114.0,
+      "change_pct": -0.8695652173913043,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型",
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "6580",
+      "name": "Writeup Co.,Ltd.",
+      "entry_price": 931.0,
+      "stop_loss": 837.9,
+      "take_profit": 1163.75,
+      "close_prev": 931.0,
+      "close_now": 911.0,
+      "change_pct": -2.1482277121374866,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "9385",
+      "name": "Shoei Corporation",
+      "entry_price": 797.0,
+      "stop_loss": 764.8571428571429,
+      "take_profit": 845.2142857142857,
+      "close_prev": 797.0,
+      "close_now": 762.0,
+      "change_pct": -4.391468005018821,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型"
+      ]
+    },
+    {
+      "code": "5729",
+      "name": "Nihon Seiko Co., Ltd.",
+      "entry_price": 2627.5,
+      "stop_loss": 2364.75,
+      "take_profit": 3021.625,
+      "close_prev": 2627.5,
+      "close_now": 2457.5,
+      "change_pct": -6.470028544243577,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型"
+      ]
+    },
+    {
+      "code": "9367",
+      "name": "Daito Koun Co.,Ltd.",
+      "entry_price": 2415.0,
+      "stop_loss": 2295.1428571428573,
+      "take_profit": 2594.7857142857138,
+      "close_prev": 2415.0,
+      "close_now": 2403.0,
+      "change_pct": -0.4968944099378882,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型"
+      ]
+    },
+    {
+      "code": "4222",
+      "name": "Kodama Chemical Industry Co.,Ltd.",
+      "entry_price": 1062.0,
+      "stop_loss": 955.8000000000001,
+      "take_profit": 1221.3,
+      "close_prev": 1062.0,
+      "close_now": 1081.0,
+      "change_pct": 1.7890772128060264,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型"
+      ]
+    },
+    {
+      "code": "3810",
+      "name": "CyberStep Holdings, Inc.",
+      "entry_price": 264.0,
+      "stop_loss": 237.6,
+      "take_profit": 303.6,
+      "close_prev": 264.0,
+      "close_now": 254.0,
+      "change_pct": -3.787878787878788,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ATRスクイーズ型"
+      ]
+    },
+    {
+      "code": "4579",
+      "name": "RaQualia Pharma Inc.",
+      "entry_price": 760.0,
+      "stop_loss": 684.0,
+      "take_profit": 950.0,
+      "close_prev": 760.0,
+      "close_now": 829.0,
+      "change_pct": 9.078947368421053,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "4414",
+      "name": "FLECT Co., Ltd.",
+      "entry_price": 996.0,
+      "stop_loss": 896.4,
+      "take_profit": 1245.0,
+      "close_prev": 996.0,
+      "close_now": 1014.0,
+      "change_pct": 1.8072289156626504,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "3683",
+      "name": "Cyberlinks Co., Ltd.",
+      "entry_price": 951.0,
+      "stop_loss": 859.1428571428571,
+      "take_profit": 1180.6428571428573,
+      "close_prev": 951.0,
+      "close_now": 999.0,
+      "change_pct": 5.047318611987381,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "1847",
+      "name": "Ichiken Co., Ltd.",
+      "entry_price": 2745.0,
+      "stop_loss": 2470.5,
+      "take_profit": 3431.25,
+      "close_prev": 2745.0,
+      "close_now": 2580.0,
+      "change_pct": -6.0109289617486334,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "4404",
+      "name": "Miyoshi Oil & Fat Co., Ltd.",
+      "entry_price": 2114.0,
+      "stop_loss": 2003.142857142857,
+      "take_profit": 2391.1428571428573,
+      "close_prev": 2114.0,
+      "close_now": 2191.0,
+      "change_pct": 3.642384105960265,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "211A",
+      "name": "Cados Corporation",
+      "entry_price": 4005.0,
+      "stop_loss": 3772.1428571428573,
+      "take_profit": 4587.142857142857,
+      "close_prev": 4005.0,
+      "close_now": 4070.0,
+      "change_pct": 1.6229712858926344,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "157A",
+      "name": "GREEN MONSTER INC",
+      "entry_price": 1746.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1746.0,
+      "close_now": 1080.0,
+      "change_pct": -38.144329896907216,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2321",
+      "name": "Softfront Holdings",
+      "entry_price": 403.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 403.0,
+      "close_now": 219.0,
+      "change_pct": -45.6575682382134,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 793.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 793.0,
+      "close_now": 679.0,
+      "change_pct": -14.37578814627995,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "1418",
+      "name": "Interlife Holdings Co., Ltd.",
+      "entry_price": 483.0,
+      "stop_loss": 453.2857142857143,
+      "take_profit": 557.2857142857143,
+      "close_prev": 483.0,
+      "close_now": 499.0,
+      "change_pct": 3.3126293995859215,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    }
+  ]
+}

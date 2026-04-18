@@ -1,0 +1,85 @@
+{
+  "date": "2026-03-21",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  },
+  "performance": [
+    {
+      "code": "157A",
+      "name": "GREEN MONSTER INC",
+      "entry_price": 1746.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1746.0,
+      "close_now": 1118.0,
+      "change_pct": -35.967926689576174,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "6666",
+      "name": "River Eletec Corporation",
+      "entry_price": 680.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 680.0,
+      "close_now": 698.0,
+      "change_pct": 2.6470588235294117,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 793.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 793.0,
+      "close_now": 701.0,
+      "change_pct": -11.601513240857503,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2321",
+      "name": "Softfront Holdings",
+      "entry_price": 403.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 403.0,
+      "close_now": 317.0,
+      "change_pct": -21.339950372208435,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "8742",
+      "name": "Kobayashi Yoko Co., Ltd.",
+      "entry_price": 581.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 581.0,
+      "close_now": 500.0,
+      "change_pct": -13.941480206540447,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    }
+  ]
+}

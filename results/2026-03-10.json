@@ -1,0 +1,18 @@
+{
+  "date": "2026-03-10",
+  "strategies": {
+    "breakout": [
+      {
+        "code": "157A",
+        "name": "GREEN MONSTER INC",
+        "close": 1746.0,
+        "rsi": 76.41440310421717,
+        "macd": 90.6662316321922,
+        "macd_signal": 35.99379570250222,
+        "macd_dir": "up"
+      }
+    ],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  }
+}

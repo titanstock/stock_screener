@@ -1,0 +1,269 @@
+{
+  "date": "2026-03-24",
+  "strategies": {
+    "breakout": [],
+    "atr_squeeze": [],
+    "oversold_bounce": [
+      {
+        "code": "1418",
+        "name": "Interlife Holdings Co., Ltd.",
+        "close": 483.0,
+        "entry_price": 483.0,
+        "stop_loss": 453.2857142857143,
+        "take_profit": 557.2857142857143,
+        "stop_capped": false,
+        "rsi": 25.16422081517898,
+        "macd": -20.410668614032033,
+        "macd_signal": -17.455262270884653,
+        "macd_dir": "down"
+      },
+      {
+        "code": "211A",
+        "name": "Cados Corporation",
+        "close": 4005.0,
+        "entry_price": 4005.0,
+        "stop_loss": 3772.1428571428573,
+        "take_profit": 4587.142857142857,
+        "stop_capped": false,
+        "rsi": 26.722101426854493,
+        "macd": -110.56886663503883,
+        "macd_signal": -65.62311618876848,
+        "macd_dir": "down"
+      },
+      {
+        "code": "3683",
+        "name": "Cyberlinks Co., Ltd.",
+        "close": 951.0,
+        "entry_price": 951.0,
+        "stop_loss": 859.1428571428571,
+        "take_profit": 1180.6428571428573,
+        "stop_capped": false,
+        "rsi": 21.185374147855015,
+        "macd": -65.5344749165431,
+        "macd_signal": -54.258930004497984,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4404",
+        "name": "Miyoshi Oil & Fat Co., Ltd.",
+        "close": 2114.0,
+        "entry_price": 2114.0,
+        "stop_loss": 2003.142857142857,
+        "take_profit": 2391.1428571428573,
+        "stop_capped": false,
+        "rsi": 29.879854633091796,
+        "macd": -66.146138744366,
+        "macd_signal": -52.553551973762296,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4414",
+        "name": "FLECT Co., Ltd.",
+        "close": 996.0,
+        "entry_price": 996.0,
+        "stop_loss": 896.4,
+        "take_profit": 1245.0,
+        "stop_capped": true,
+        "rsi": 23.857852933019856,
+        "macd": -116.90502449328733,
+        "macd_signal": -104.65874280037622,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4579",
+        "name": "RaQualia Pharma Inc.",
+        "close": 760.0,
+        "entry_price": 760.0,
+        "stop_loss": 684.0,
+        "take_profit": 950.0,
+        "stop_capped": true,
+        "rsi": 29.984907689506684,
+        "macd": -48.630198762665145,
+        "macd_signal": -39.278144944891636,
+        "macd_dir": "down"
+      }
+    ]
+  },
+  "performance": [
+    {
+      "code": "3683",
+      "name": "Cyberlinks Co., Ltd.",
+      "entry_price": 951.0,
+      "stop_loss": 859.1428571428571,
+      "take_profit": 1180.6428571428573,
+      "close_prev": 951.0,
+      "close_now": 998.0,
+      "change_pct": 4.942166140904311,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "4579",
+      "name": "RaQualia Pharma Inc.",
+      "entry_price": 760.0,
+      "stop_loss": 684.0,
+      "take_profit": 950.0,
+      "close_prev": 760.0,
+      "close_now": 817.0,
+      "change_pct": 7.5,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "1418",
+      "name": "Interlife Holdings Co., Ltd.",
+      "entry_price": 483.0,
+      "stop_loss": 453.2857142857143,
+      "take_profit": 557.2857142857143,
+      "close_prev": 483.0,
+      "close_now": 511.0,
+      "change_pct": 5.797101449275362,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "157A",
+      "name": "GREEN MONSTER INC",
+      "entry_price": 1746.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1746.0,
+      "close_now": 1103.0,
+      "change_pct": -36.8270332187858,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 793.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 793.0,
+      "close_now": 665.0,
+      "change_pct": -16.14123581336696,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "4414",
+      "name": "FLECT Co., Ltd.",
+      "entry_price": 996.0,
+      "stop_loss": 896.4,
+      "take_profit": 1245.0,
+      "close_prev": 996.0,
+      "close_now": 1013.0,
+      "change_pct": 1.706827309236948,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "211A",
+      "name": "Cados Corporation",
+      "entry_price": 4005.0,
+      "stop_loss": 3772.1428571428573,
+      "take_profit": 4587.142857142857,
+      "close_prev": 4005.0,
+      "close_now": 4120.0,
+      "change_pct": 2.871410736579276,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "7119",
+      "name": "halmek holdings Co.,Ltd.",
+      "entry_price": 1401.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 1401.0,
+      "close_now": 1604.0,
+      "change_pct": 14.489650249821556,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "2321",
+      "name": "Softfront Holdings",
+      "entry_price": 403.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 403.0,
+      "close_now": 246.0,
+      "change_pct": -38.95781637717122,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "4404",
+      "name": "Miyoshi Oil & Fat Co., Ltd.",
+      "entry_price": 2114.0,
+      "stop_loss": 2003.142857142857,
+      "take_profit": 2391.1428571428573,
+      "close_prev": 2114.0,
+      "close_now": 2228.0,
+      "change_pct": 5.392620624408704,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "6666",
+      "name": "River Eletec Corporation",
+      "entry_price": 680.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 680.0,
+      "close_now": 748.0,
+      "change_pct": 10.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    },
+    {
+      "code": "8742",
+      "name": "Kobayashi Yoko Co., Ltd.",
+      "entry_price": 581.0,
+      "stop_loss": null,
+      "take_profit": null,
+      "close_prev": 581.0,
+      "close_now": 489.0,
+      "change_pct": -15.834767641996558,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ブレイクアウト/出来高急増型"
+      ]
+    }
+  ]
+}

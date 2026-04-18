@@ -1,0 +1,63 @@
+{
+  "date": "2026-03-06",
+  "strategies": {
+    "breakout": [
+      {
+        "code": "157A",
+        "name": "GREEN MONSTER INC",
+        "close": 1446.0,
+        "rsi": 68.99224706867886,
+        "macd": 44.97459519574045,
+        "macd_signal": 22.325686693058127,
+        "macd_dir": "up"
+      },
+      {
+        "code": "2321",
+        "name": "Softfront Holdings",
+        "close": 403.0,
+        "rsi": 90.70712398955794,
+        "macd": 34.13991463683527,
+        "macd_signal": 10.787341450928375,
+        "macd_dir": "up"
+      },
+      {
+        "code": "2437",
+        "name": "Shinwa Wise Holdings Co.,Ltd.",
+        "close": 793.0,
+        "rsi": 90.9913722479438,
+        "macd": 60.38242309109546,
+        "macd_signal": 46.620786753800445,
+        "macd_dir": "up"
+      },
+      {
+        "code": "6666",
+        "name": "River Eletec Corporation",
+        "close": 680.0,
+        "rsi": 70.2168690704937,
+        "macd": 44.420339000333,
+        "macd_signal": 34.07112451382244,
+        "macd_dir": "up"
+      },
+      {
+        "code": "7119",
+        "name": "halmek holdings Co.,Ltd.",
+        "close": 1401.0,
+        "rsi": 70.22852927729934,
+        "macd": 10.36337310869726,
+        "macd_signal": 6.814331543038136,
+        "macd_dir": "up"
+      },
+      {
+        "code": "8742",
+        "name": "Kobayashi Yoko Co., Ltd.",
+        "close": 581.0,
+        "rsi": 70.83662508379771,
+        "macd": 20.90208915224082,
+        "macd_signal": 14.117535651501758,
+        "macd_dir": "up"
+      }
+    ],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  }
+}

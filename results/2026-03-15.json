@@ -1,0 +1,131 @@
+{
+  "date": "2026-03-15",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  },
+  "performance": [
+    {
+      "code": "4893",
+      "name": "Noile-Immune Biotech Inc.",
+      "entry_price": 176.4,
+      "stop_loss": 158.76000000000002,
+      "take_profit": 202.85999999999999,
+      "close_prev": 180.0,
+      "close_now": 180.0,
+      "change_pct": 2.040816326530609,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型"
+      ]
+    },
+    {
+      "code": "261A",
+      "name": "NIHON SUIDO CONSULTANTS CO LTD",
+      "entry_price": 2371.88,
+      "stop_loss": 2225.1657142857143,
+      "take_profit": 2591.9514285714286,
+      "close_prev": 2498.0,
+      "close_now": 2498.0,
+      "change_pct": 5.317301043897663,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "7050",
+      "name": "Frontier International Inc.",
+      "entry_price": 1575.84,
+      "stop_loss": 1448.84,
+      "take_profit": 1766.34,
+      "close_prev": 1608.0,
+      "close_now": 1608.0,
+      "change_pct": 2.0408163265306176,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型"
+      ]
+    },
+    {
+      "code": "7358",
+      "name": "Poppins Corporation",
+      "entry_price": 1422.12,
+      "stop_loss": 1333.8342857142857,
+      "take_profit": 1554.5485714285712,
+      "close_prev": 1451.0,
+      "close_now": 1451.0,
+      "change_pct": 2.0307709616628773,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "8835",
+      "name": "Taiheiyo Kouhatsu Incorporated",
+      "entry_price": 892.78,
+      "stop_loss": 855.9228571428571,
+      "take_profit": 948.0657142857143,
+      "close_prev": 911.0,
+      "close_now": 911.0,
+      "change_pct": 2.0408163265306154,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型",
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "6769",
+      "name": "THine Electronics, Inc.",
+      "entry_price": 938.84,
+      "stop_loss": 845.6971428571429,
+      "take_profit": 1078.5542857142857,
+      "close_prev": 958.0,
+      "close_now": 958.0,
+      "change_pct": 2.0408163265306087,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型"
+      ]
+    },
+    {
+      "code": "2204",
+      "name": "Nakamuraya Co., Ltd.",
+      "entry_price": 3245.6,
+      "stop_loss": 3151.3142857142857,
+      "take_profit": 3387.028571428571,
+      "close_prev": 3325.0,
+      "close_now": 3325.0,
+      "change_pct": 2.4463889573576565,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "7831",
+      "name": "Wellco Holdings Corporation",
+      "entry_price": 91.8,
+      "stop_loss": 85.08571428571429,
+      "take_profit": 101.87142857142857,
+      "close_prev": 94.0,
+      "close_now": 94.0,
+      "change_pct": 2.3965141612200465,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "date": "2026-03-11",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  }
+}

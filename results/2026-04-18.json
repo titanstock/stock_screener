@@ -1,0 +1,98 @@
+{
+  "date": "2026-04-18",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 217.0,
+        "entry_price": 217.0,
+        "stop_loss": 195.3,
+        "take_profit": 271.25,
+        "stop_capped": true,
+        "rsi": 18.632327476597823,
+        "rsi30": 26.444931339132793,
+        "macd": -28.679539913439555,
+        "macd_signal": -15.002182448197653,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4439",
+        "name": "Toumei Co.,Ltd.",
+        "close": 819.0,
+        "entry_price": 819.0,
+        "stop_loss": 762.2857142857143,
+        "take_profit": 960.7857142857142,
+        "stop_capped": false,
+        "rsi": 20.66610671407186,
+        "rsi30": 29.582710736440248,
+        "macd": -39.195203682494366,
+        "macd_signal": -26.132002397928712,
+        "macd_dir": "down"
+      }
+    ],
+    "vol_dry_bounce": [
+      {
+        "code": "4598",
+        "name": "Delta-Fly Pharma, Inc.",
+        "close": 204.0,
+        "entry_price": 204.0,
+        "stop_loss": 186.0,
+        "take_profit": 249.0,
+        "stop_capped": false,
+        "rsi": 48.23861936806866,
+        "rsi30": 41.02353815506115,
+        "macd": -8.40760853047513,
+        "macd_signal": -11.118806758954003,
+        "macd_dir": "up"
+      }
+    ],
+    "consec_bear_shadow": [
+      {
+        "code": "462A",
+        "name": "FUNDINNO INC",
+        "close": 856.0,
+        "entry_price": 856.0,
+        "stop_loss": 770.4,
+        "take_profit": 1070.0,
+        "stop_capped": true,
+        "rsi": 40.95372291674906,
+        "rsi30": 45.321187796249745,
+        "macd": -16.748980495382057,
+        "macd_signal": -10.546471236984278,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 217.0,
+        "entry_price": 217.0,
+        "stop_loss": 195.3,
+        "take_profit": 260.4,
+        "stop_capped": true,
+        "rsi": 18.632327476597823,
+        "rsi30": 26.444931339132793,
+        "macd": -28.679539913439555,
+        "macd_signal": -15.002182448197653,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4439",
+        "name": "Toumei Co.,Ltd.",
+        "close": 819.0,
+        "entry_price": 819.0,
+        "stop_loss": 762.2857142857143,
+        "take_profit": 932.4285714285713,
+        "stop_capped": false,
+        "rsi": 20.66610671407186,
+        "rsi30": 29.582710736440248,
+        "macd": -39.195203682494366,
+        "macd_signal": -26.132002397928712,
+        "macd_dir": "down"
+      }
+    ]
+  }
+}

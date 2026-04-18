@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ジョブ識別子 -->
+    <key>Label</key>
+    <string>com.user.stock-screener</string>
+
+    <!-- 実行コマンド -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/tanakarano/stock_screener/run.sh</string>
+    </array>
+
+    <!-- 実行タイミング: 毎日 16:00 JST -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>16</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- 作業ディレクトリ -->
+    <key>WorkingDirectory</key>
+    <string>/Users/tanakarano/stock_screener</string>
+
+    <!-- ログ出力先 -->
+    <key>StandardOutPath</key>
+    <string>/Users/tanakarano/stock_screener/screener.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/tanakarano/stock_screener/screener_error.log</string>
+
+    <!-- PATH を明示（launchd は通常の shell PATH を継承しない） -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>LANG</key>
+        <string>ja_JP.UTF-8</string>
+    </dict>
+
+    <!-- ログイン後に自動起動 -->
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

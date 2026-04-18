@@ -1,0 +1,36 @@
+{
+  "date": "2026-03-08",
+  "strategies": {
+    "breakout": [
+      {
+        "code": "157A",
+        "name": "GREEN MONSTER INC",
+        "close": 1446.0,
+        "rsi": 68.99224706867886,
+        "macd": 44.97459519574045,
+        "macd_signal": 22.325686693058127,
+        "macd_dir": "up"
+      },
+      {
+        "code": "2321",
+        "name": "Softfront Holdings",
+        "close": 403.0,
+        "rsi": 90.70712398955794,
+        "macd": 34.13991463683527,
+        "macd_signal": 10.787341450928375,
+        "macd_dir": "up"
+      },
+      {
+        "code": "2437",
+        "name": "Shinwa Wise Holdings Co.,Ltd.",
+        "close": 793.0,
+        "rsi": 90.9913722479438,
+        "macd": 60.38242309109546,
+        "macd_signal": 46.620786753800445,
+        "macd_dir": "up"
+      }
+    ],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  }
+}

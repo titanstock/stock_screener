@@ -1,0 +1,70 @@
+{
+  "date": "2026-03-13",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  },
+  "performance": [
+    {
+      "code": "6092",
+      "name": "6092.T",
+      "entry_price": 704.62,
+      "stop_loss": 634.158,
+      "take_profit": 810.313,
+      "close_prev": 719.0,
+      "close_now": 745.0,
+      "change_pct": 5.730748488547017,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型"
+      ]
+    },
+    {
+      "code": "3267",
+      "name": "Phil Company, Inc.",
+      "entry_price": 1178.94,
+      "stop_loss": 1061.046,
+      "take_profit": 1355.781,
+      "close_prev": 1203.0,
+      "close_now": 1182.0,
+      "change_pct": 0.2595551936485271,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型"
+      ]
+    },
+    {
+      "code": "3641",
+      "name": "Papyless Co., Ltd.",
+      "entry_price": 1072.72,
+      "stop_loss": 1046.72,
+      "take_profit": 1111.72,
+      "close_prev": 1096.0,
+      "close_now": 1098.0,
+      "change_pct": 2.3566261466179403,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "3981",
+      "name": "Beaglee Inc.",
+      "entry_price": 1273.32,
+      "stop_loss": 1216.7485714285713,
+      "take_profit": 1358.1771428571428,
+      "close_prev": 1298.0,
+      "close_now": 1285.0,
+      "change_pct": 0.9172870920114398,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    }
+  ]
+}

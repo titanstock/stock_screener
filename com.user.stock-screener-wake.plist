@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.stock-screener-wake</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/tanakarano/stock_screener/schedule-wake.sh</string>
+    </array>
+
+    <!-- 毎朝 8:00 に当日 15:55 の wake を予約する -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>8</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/tanakarano/stock_screener/wake-schedule.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/tanakarano/stock_screener/wake-schedule.log</string>
+</dict>
+</plist>

@@ -1,0 +1,55 @@
+{
+  "date": "2026-03-18",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  },
+  "performance": [
+    {
+      "code": "3647",
+      "name": "ASULINA Co.,Ltd.",
+      "entry_price": 147.36,
+      "stop_loss": 132.62400000000002,
+      "take_profit": 169.464,
+      "close_prev": 162.0,
+      "close_now": 150.0,
+      "change_pct": 1.791530944625398,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "339A",
+      "name": "PROGRESS TECHNOLOGIES GROUP INC",
+      "entry_price": 1422.004326171875,
+      "stop_loss": 1292.5757547433036,
+      "take_profit": 1616.147183314732,
+      "close_prev": 1524.0,
+      "close_now": 1500.0,
+      "change_pct": 5.4849111491871705,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "2204",
+      "name": "Nakamuraya Co., Ltd.",
+      "entry_price": 3271.8,
+      "stop_loss": 3168.2285714285717,
+      "take_profit": 3427.157142857143,
+      "close_prev": 3370.0,
+      "close_now": 3355.0,
+      "change_pct": 2.5429427226603036,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "date": "2026-03-12",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [],
+    "atr_squeeze": []
+  },
+  "performance": [
+    {
+      "code": "3267",
+      "name": "Phil Company, Inc.",
+      "entry_price": 1178.94,
+      "stop_loss": 1061.046,
+      "take_profit": 1355.781,
+      "close_prev": 1203.0,
+      "close_now": 1203.0,
+      "change_pct": 2.0408163265306074,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ベースライン型"
+      ]
+    },
+    {
+      "code": "3641",
+      "name": "Papyless Co., Ltd.",
+      "entry_price": 1072.72,
+      "stop_loss": 1046.72,
+      "take_profit": 1111.72,
+      "close_prev": 1096.0,
+      "close_now": 1096.0,
+      "change_pct": 2.170184204638673,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "3981",
+      "name": "Beaglee Inc.",
+      "entry_price": 1273.32,
+      "stop_loss": 1216.7485714285713,
+      "take_profit": 1358.1771428571428,
+      "close_prev": 1298.0,
+      "close_now": 1298.0,
+      "change_pct": 1.9382401909967695,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "7091",
+      "name": "Living Platform,Ltd.",
+      "entry_price": 1203.0,
+      "stop_loss": 1082.7,
+      "take_profit": 1383.4499999999998,
+      "close_prev": 1232.0,
+      "close_now": 1232.0,
+      "change_pct": 2.4106400665004157,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "7692",
+      "name": "Earth Infinity Co.Ltd.",
+      "entry_price": 102.48,
+      "stop_loss": 96.62285714285714,
+      "take_profit": 111.2657142857143,
+      "close_prev": 106.0,
+      "close_now": 106.0,
+      "change_pct": 3.434816549570644,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "9251",
+      "name": "AB&Company Co.,Ltd.",
+      "entry_price": 1245.48,
+      "stop_loss": 1202.1942857142858,
+      "take_profit": 1310.4085714285713,
+      "close_prev": 1268.0,
+      "close_now": 1268.0,
+      "change_pct": 1.8081382278318385,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    },
+    {
+      "code": "9306",
+      "name": "Toyo Logistics Co., Ltd.",
+      "entry_price": 2057.64,
+      "stop_loss": 1967.2114285714285,
+      "take_profit": 2193.2828571428568,
+      "close_prev": 2098.0,
+      "close_now": 2098.0,
+      "change_pct": 1.9614704224256978,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "押し目買い型"
+      ]
+    }
+  ]
+}
