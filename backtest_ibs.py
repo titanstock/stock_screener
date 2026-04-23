@@ -71,7 +71,7 @@ GRID = {
     "ma75_pos":   [None, "above", "below"],       # MA75との位置関係
     "ma25_dev":   [None, -3.0, -5.0, -10.0],    # MA25乖離率上限 (None=制限なし)
     "rr":         [1.5, 2.0, 2.5],               # RR比
-    "mktcap_max": [100e9, 200e9, None],          # 時価総額上限 (None=制限なし)
+    "mktcap_max": [30e9, 100e9, 200e9, None],    # 時価総額上限 (None=制限なし)
 }
 # 4×4×4×4×3×4×3×3 = 27,648 通り
 
@@ -80,7 +80,7 @@ _IBS_KEY  = {0.2: "ibs02", 0.3: "ibs03", 0.5: "ibs05"}
 _RSI_KEY  = {(p, h): f"r{p}_{h}" for p in RSI_PERIODS for h in RSI_THRESHOLDS}
 _VOL_KEY  = {1.5: "v15", 2.0: "v20", 3.0: "v30"}
 _MA25_KEY = {-3.0: "m3", -5.0: "m5", -10.0: "m10"}
-_MC_KEY   = {100e9: "c100", 200e9: "c200"}
+_MC_KEY   = {30e9: "c30", 100e9: "c100", 200e9: "c200"}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -95,7 +95,7 @@ def _fetch_jpx_tickers() -> list[str]:
     code_col = next((c for c in df.columns if "コード" in str(c)), None)
     if not mkt_col or not code_col:
         raise RuntimeError("JPXリストの列名が変更されています")
-    targets = ["プライム", "スタンダード", "グロース"]
+    targets = ["スタンダード", "グロース"]
     df = df[df[mkt_col].str.contains("|".join(targets), na=False)]
     codes = df[code_col].str.strip().tolist()
     return [f"{c}.T" for c in codes if c.isdigit() and len(c) == 4]
@@ -308,6 +308,7 @@ def preprocess(ticker: str, df_raw: pd.DataFrame,
         "v30": (vol_r >= 3.0) & ~np.isnan(vol_r),
 
         # 時価総額
+        "c30":  np.isnan(mktcap) | (mktcap <= 30e9),
         "c100": np.isnan(mktcap) | (mktcap <= 100e9),
         "c200": np.isnan(mktcap) | (mktcap <= 200e9),
     }
@@ -320,6 +321,9 @@ def preprocess(ticker: str, df_raw: pd.DataFrame,
 
     return {
         "close":  c,
+        "high":   h,
+        "low":    l,
+        "open":   o,
         "next_o": next_o,
         "atr":    atr,
         "flags":  flags,
@@ -331,20 +335,29 @@ def preprocess(ticker: str, df_raw: pd.DataFrame,
 # リターン計算（ベクトル化）
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _calc_rets(closes: np.ndarray, vidx: np.ndarray,
+def _calc_rets(highs: np.ndarray, lows: np.ndarray, opens: np.ndarray,
+               closes: np.ndarray, vidx: np.ndarray,
                e_arr: np.ndarray, s_arr: np.ndarray,
                t_arr: np.ndarray) -> np.ndarray:
     n        = len(closes)
     raw_idx  = vidx[:, np.newaxis] + np.arange(1, MAX_HOLD + 1)
     in_range = raw_idx < n
     safe_idx = np.where(in_range, raw_idx, n - 1)
-    fut      = np.where(in_range, closes[safe_idx], np.nan)
-    hit      = ((fut <= s_arr[:, np.newaxis]) | (fut >= t_arr[:, np.newaxis])) & in_range
+    fut_h    = np.where(in_range, highs[safe_idx], np.nan)
+    fut_l    = np.where(in_range, lows[safe_idx], np.nan)
+    fut_o    = np.where(in_range, opens[safe_idx], np.nan)
+    hit_sl   = ((fut_l <= s_arr[:, np.newaxis]) | (fut_o <= s_arr[:, np.newaxis])) & in_range
+    hit_tp   = ((fut_h >= t_arr[:, np.newaxis]) | (fut_o >= t_arr[:, np.newaxis])) & in_range
+    hit      = hit_sl | hit_tp
     has_hit  = hit.any(axis=1)
     has_fut  = in_range.any(axis=1)
     last_v   = np.where(has_fut, np.sum(in_range, axis=1) - 1, 0)
     fhp      = np.clip(np.where(has_hit, np.argmax(hit, axis=1), last_v), 0, MAX_HOLD - 1)
-    ep       = closes[np.clip(vidx + 1 + fhp, 0, n - 1)]
+    exit_idx = np.clip(vidx + 1 + fhp, 0, n - 1)
+    ex_o     = opens[exit_idx]
+    ex_sl    = has_hit & ((lows[exit_idx] <= s_arr) | (ex_o <= s_arr))
+    sl_price = np.where(ex_o <= s_arr, ex_o, s_arr)
+    ep       = np.where(~has_hit, closes[exit_idx], np.where(ex_sl, sl_price, t_arr))
     rets     = np.where(has_fut, (ep - e_arr) / e_arr * 100, np.nan)
     return rets[~np.isnan(rets)]
 
@@ -424,7 +437,7 @@ def run_grid(all_proc: list[dict], trading_days: int) -> list[dict]:
             valid = (e > 0) & (s > 0) & (t > 0) & (s < e) & (t > e)
             if not valid.any():
                 continue
-            rets = _calc_rets(td["close"], vidx[valid], e[valid], s[valid], t[valid])
+            rets = _calc_rets(td["high"], td["low"], td["open"], td["close"], vidx[valid], e[valid], s[valid], t[valid])
             all_rets.extend(rets.tolist())
 
         m = _metrics(np.array(all_rets), trading_days)

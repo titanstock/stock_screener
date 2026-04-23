@@ -1,7 +1,29 @@
-*.pkl
+# 機密情報
 .env
-venv/
-__pycache__/
-*.pyc
 .jq_token_cache.json
+
+# キャッシュ・大容量ファイル
+*.pkl
+*.pyc
+__pycache__/
+
+# ログ
+*.log
+
+# 実行結果（任意でコメントアウト解除）
+# results/
+# backtest_results.json
+# gridsearch_results.json
+
+# ポートフォリオ（個人データ）
+portfolio.json
+
+# 仮想環境
+venv/
+
+# macOS
+.DS_Store
 node_modules/
+
+# plist（ローカル自動実行設定）
+*.plist

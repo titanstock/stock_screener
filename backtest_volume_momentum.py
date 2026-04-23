@@ -63,7 +63,7 @@ GRID = {
     ],
     # close vs MA25: None=制限なし / "above"=MA25上 / "below"=MA25下
     "ma25_pos":  [None, "above", "below"],
-    "mktcap_max": [100e9, 200e9, 300e9, None],
+    "mktcap_max": [30e9, 100e9, 200e9, 300e9, None],
     "rr":        [1.5, 2.0, 2.5],
 }
 
@@ -279,6 +279,7 @@ def preprocess(ticker: str, df_raw: pd.DataFrame,
         "above_ma25": (c > ma25) & ~np.isnan(ma25),
         "below_ma25": (c < ma25) & ~np.isnan(ma25),
         # 時価総額
+        "c30":  np.isnan(mktcap) | (mktcap <= 30e9),
         "c100": np.isnan(mktcap) | (mktcap <= 100e9),
         "c200": np.isnan(mktcap) | (mktcap <= 200e9),
         "c300": np.isnan(mktcap) | (mktcap <= 300e9),
@@ -286,6 +287,9 @@ def preprocess(ticker: str, df_raw: pd.DataFrame,
 
     return {
         "close":  c,
+        "high":   h,
+        "low":    l,
+        "open":   o,
         "next_o": next_o,
         "atr":    atr,
         "flags":  flags,
@@ -297,25 +301,33 @@ def preprocess(ticker: str, df_raw: pd.DataFrame,
 # リターン計算
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _calc_rets(closes, vidx, e_arr, s_arr, t_arr):
+def _calc_rets(highs, lows, opens, closes, vidx, e_arr, s_arr, t_arr):
     n        = len(closes)
     raw_idx  = vidx[:, np.newaxis] + np.arange(1, MAX_HOLD + 1)
     in_range = raw_idx < n
     safe_idx = np.where(in_range, raw_idx, n - 1)
-    fut      = np.where(in_range, closes[safe_idx], np.nan)
-    hit      = ((fut <= s_arr[:, np.newaxis]) | (fut >= t_arr[:, np.newaxis])) & in_range
+    fut_h    = np.where(in_range, highs[safe_idx], np.nan)
+    fut_l    = np.where(in_range, lows[safe_idx], np.nan)
+    fut_o    = np.where(in_range, opens[safe_idx], np.nan)
+    hit_sl   = ((fut_l <= s_arr[:, np.newaxis]) | (fut_o <= s_arr[:, np.newaxis])) & in_range
+    hit_tp   = ((fut_h >= t_arr[:, np.newaxis]) | (fut_o >= t_arr[:, np.newaxis])) & in_range
+    hit      = hit_sl | hit_tp
     has_hit  = hit.any(axis=1)
     has_fut  = in_range.any(axis=1)
     last_v   = np.where(has_fut, np.sum(in_range, axis=1) - 1, 0)
     fhp      = np.clip(np.where(has_hit, np.argmax(hit, axis=1), last_v), 0, MAX_HOLD - 1)
-    ep       = closes[np.clip(vidx + 1 + fhp, 0, n - 1)]
+    exit_idx = np.clip(vidx + 1 + fhp, 0, n - 1)
+    ex_o     = opens[exit_idx]
+    ex_sl    = has_hit & ((lows[exit_idx] <= s_arr) | (ex_o <= s_arr))
+    sl_price = np.where(ex_o <= s_arr, ex_o, s_arr)
+    ep       = np.where(~has_hit, closes[exit_idx], np.where(ex_sl, sl_price, t_arr))
     rets     = np.where(has_fut, (ep - e_arr) / e_arr * 100, np.nan)
     return rets[~np.isnan(rets)]
 
 
 _VOL_KEY  = {3.0: "v3", 5.0: "v5", 7.0: "v7", 10.0: "v10"}
 _PCT_KEY  = {2.0: "p2", 3.0: "p3", 5.0: "p5"}
-_MC_KEY   = {100e9: "c100", 200e9: "c200", 300e9: "c300"}
+_MC_KEY   = {30e9: "c30", 100e9: "c100", 200e9: "c200", 300e9: "c300"}
 
 
 def _get_mask(flags, vol_mult, pct_thr, rsi_range, ma25_pos, mktcap_max):
@@ -387,7 +399,7 @@ def run_grid(all_proc: list[dict], trading_days: int) -> list[dict]:
             valid = (e > 0) & (s < e) & (t > e)
             if not valid.any():
                 continue
-            rets = _calc_rets(td["close"], vidx[valid], e[valid], s[valid], t[valid])
+            rets = _calc_rets(td["high"], td["low"], td["open"], td["close"], vidx[valid], e[valid], s[valid], t[valid])
             all_rets.extend(rets.tolist())
 
         m = _metrics(np.array(all_rets), trading_days)

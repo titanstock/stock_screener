@@ -63,7 +63,8 @@ def fetch_all_shares(tickers: list[str]) -> dict[str, float]:
 
 
 # ── 出口計算（ベクトル化）────────────────────────────────────────────────────
-def _calc_rets(closes: np.ndarray, vidx: np.ndarray,
+def _calc_rets(highs: np.ndarray, lows: np.ndarray, opens: np.ndarray,
+               closes: np.ndarray, vidx: np.ndarray,
                e_arr: np.ndarray, s_arr: np.ndarray, t_arr: np.ndarray) -> np.ndarray:
     n = len(closes)
     if len(vidx) == 0:
@@ -71,19 +72,28 @@ def _calc_rets(closes: np.ndarray, vidx: np.ndarray,
     raw_idx  = vidx[:, np.newaxis] + np.arange(1, MAX_HOLD + 1)
     in_range = raw_idx < n
     safe_idx = np.where(in_range, raw_idx, n - 1)
-    fut      = np.where(in_range, closes[safe_idx], np.nan)
-    hit     = ((fut <= s_arr[:, np.newaxis]) | (fut >= t_arr[:, np.newaxis])) & in_range
-    has_hit = hit.any(axis=1)
-    has_fut = in_range.any(axis=1)
-    last_v  = np.where(has_fut, np.sum(in_range, axis=1) - 1, 0)
-    fhp     = np.clip(np.where(has_hit, np.argmax(hit, axis=1), last_v), 0, MAX_HOLD - 1)
-    ep      = closes[np.clip(vidx + 1 + fhp, 0, n - 1)]
-    rets    = np.where(has_fut, (ep - e_arr) / e_arr * 100, np.nan)
+    fut_h    = np.where(in_range, highs[safe_idx], np.nan)
+    fut_l    = np.where(in_range, lows[safe_idx], np.nan)
+    fut_o    = np.where(in_range, opens[safe_idx], np.nan)
+    hit_sl   = ((fut_l <= s_arr[:, np.newaxis]) | (fut_o <= s_arr[:, np.newaxis])) & in_range
+    hit_tp   = ((fut_h >= t_arr[:, np.newaxis]) | (fut_o >= t_arr[:, np.newaxis])) & in_range
+    hit      = hit_sl | hit_tp
+    has_hit  = hit.any(axis=1)
+    has_fut  = in_range.any(axis=1)
+    last_v   = np.where(has_fut, np.sum(in_range, axis=1) - 1, 0)
+    fhp      = np.clip(np.where(has_hit, np.argmax(hit, axis=1), last_v), 0, MAX_HOLD - 1)
+    exit_idx = np.clip(vidx + 1 + fhp, 0, n - 1)
+    ex_o     = opens[exit_idx]
+    ex_sl    = has_hit & ((lows[exit_idx] <= s_arr) | (ex_o <= s_arr))
+    sl_price = np.where(ex_o <= s_arr, ex_o, s_arr)
+    ep       = np.where(~has_hit, closes[exit_idx], np.where(ex_sl, sl_price, t_arr))
+    rets     = np.where(has_fut, (ep - e_arr) / e_arr * 100, np.nan)
     return rets[~np.isnan(rets)]
 
 
 # ── 決済種別（損切り/利確/強制）─────────────────────────────────────────────
-def _exit_types(closes: np.ndarray, vidx: np.ndarray,
+def _exit_types(highs: np.ndarray, lows: np.ndarray, opens: np.ndarray,
+                closes: np.ndarray, vidx: np.ndarray,
                 e_arr: np.ndarray, s_arr: np.ndarray, t_arr: np.ndarray) -> np.ndarray:
     """0=強制, 1=損切り, 2=利確"""
     n = len(closes)
@@ -92,17 +102,21 @@ def _exit_types(closes: np.ndarray, vidx: np.ndarray,
     raw_idx  = vidx[:, np.newaxis] + np.arange(1, MAX_HOLD + 1)
     in_range = raw_idx < n
     safe_idx = np.where(in_range, raw_idx, n - 1)
-    fut      = np.where(in_range, closes[safe_idx], np.nan)
-    is_stop = (fut <= s_arr[:, np.newaxis]) & in_range
-    is_take = (fut >= t_arr[:, np.newaxis]) & in_range
-    hit     = (is_stop | is_take)
-    has_hit = hit.any(axis=1)
-    has_fut = in_range.any(axis=1)
-    last_v  = np.where(has_fut, np.sum(in_range, axis=1) - 1, 0)
-    fhp     = np.clip(np.where(has_hit, np.argmax(hit, axis=1), last_v), 0, MAX_HOLD - 1)
-    hit_stop = is_stop[np.arange(len(vidx)), fhp] & has_hit
-    hit_take = is_take[np.arange(len(vidx)), fhp] & has_hit & ~hit_stop
-    types    = np.where(hit_stop, 1, np.where(hit_take, 2, 0))
+    fut_h    = np.where(in_range, highs[safe_idx], np.nan)
+    fut_l    = np.where(in_range, lows[safe_idx], np.nan)
+    fut_o    = np.where(in_range, opens[safe_idx], np.nan)
+    hit_sl   = ((fut_l <= s_arr[:, np.newaxis]) | (fut_o <= s_arr[:, np.newaxis])) & in_range
+    hit_tp   = ((fut_h >= t_arr[:, np.newaxis]) | (fut_o >= t_arr[:, np.newaxis])) & in_range
+    hit      = hit_sl | hit_tp
+    has_hit  = hit.any(axis=1)
+    has_fut  = in_range.any(axis=1)
+    last_v   = np.where(has_fut, np.sum(in_range, axis=1) - 1, 0)
+    fhp      = np.clip(np.where(has_hit, np.argmax(hit, axis=1), last_v), 0, MAX_HOLD - 1)
+    exit_idx = np.clip(vidx + 1 + fhp, 0, n - 1)
+    ex_o     = opens[exit_idx]
+    is_sl    = has_hit & ((lows[exit_idx] <= s_arr) | (ex_o <= s_arr))
+    is_tp    = has_hit & ~is_sl
+    types    = np.where(is_sl, 1, np.where(is_tp, 2, 0))
     return types[has_fut]
 
 
@@ -183,6 +197,8 @@ def main():
     for tk, df in processed.items():
         n     = len(df)
         c_a   = df["Close"].values.astype(float)
+        h_a   = df["High"].values.astype(float)
+        l_a   = df["Low"].values.astype(float)
         o_a   = df["Open"].values.astype(float)
         atr   = df["ATR"].values.astype(float)
         rsi   = df["RSI"].values.astype(float)
@@ -226,8 +242,8 @@ def main():
 
         for rr in RR_LIST:
             t_arr = e_arr + (e_arr - s_arr) * rr
-            rets  = _calc_rets(c_a, vidx, e_arr, s_arr, t_arr)
-            types = _exit_types(c_a, vidx, e_arr, s_arr, t_arr)
+            rets  = _calc_rets(h_a, l_a, o_a, c_a, vidx, e_arr, s_arr, t_arr)
+            types = _exit_types(h_a, l_a, o_a, c_a, vidx, e_arr, s_arr, t_arr)
             all_rets[rr].extend(rets.tolist())
             all_types[rr].extend(types.tolist())
 

@@ -67,6 +67,14 @@ STRATEGIES: dict[str, str] = {
     "noa":                "ニッポン・オプティマライザー（NOA）",
 }
 
+# LINE/Discord 通知対象戦略（スクリーニングは全戦略で継続）
+NOTIFY_STRATEGIES: set[str] = {
+    "oversold_bounce",
+    "vol_dry_bounce",
+    "consec_bear_shadow",
+    "noa",
+}
+
 
 # 売られすぎ反発型（件数型）専用パラメータ
 # 条件: RSI14≤30 + 出来高1.5倍 + ATR拡大
@@ -76,22 +84,24 @@ OVERSOLD_BOUNCE_VOL_MULT: float = 1.5   # 出来高 ≥ 20日平均の1.5倍
 OVERSOLD_BOUNCE_RR: float      = 2.5    # リスクリワード比
 
 # 出来高枯渇反発型パラメータ
-# 条件: 5日枯渇 + 出来高2.5倍スパイク + RSI25-50 + MA25乖離≤5%
+# 条件: 5日枯渇 + 出来高2.0倍スパイク + RSI≤55 + MA25乖離≤10%
 # バックテスト実績: WR51.4% / PF1.58 / EV+1.73% / 1.22件/日（5年間）
+# 2026-04-22 グリッドサーチ結果: spike2.5x/RSI25-50/MA25≤5%は合格0件のため緩和
 VOL_DRY_DRY_DAYS: int    = 5
-VOL_DRY_SPIKE: float     = 2.5
-VOL_DRY_RSI_LO: float    = 25.0
-VOL_DRY_RSI_HI: float    = 50.0
-VOL_DRY_MA25_DEV: float  = 5.0    # MA25乖離上限（%）
+VOL_DRY_SPIKE: float     = 2.0
+VOL_DRY_RSI_LO: float    = 0.0    # 下限撤廃
+VOL_DRY_RSI_HI: float    = 55.0
+VOL_DRY_MA25_DEV: float  = 10.0   # MA25乖離上限（%）
 VOL_DRY_RR: float        = 2.5
 
 # 連続陰線下ヒゲ反発型パラメータ
-# 条件: 5日連続陰線 + 下ヒゲ30%以上 + 出来高1.5倍 + RSI≤55
+# 条件: 5日連続陰線 + 下ヒゲ30%以上 + 出来高2.0倍 + RSI≤45
 # バックテスト実績: WR54.8% / PF1.49 / EV+1.76% / 1.63件/日（5年間）
+# 2026-04-22 グリッドサーチ結果: vol2.0x/RSI≤45 → WR55.7%/PF1.99 に改善
 CONSEC_BEAR_DAYS: int         = 5
 CONSEC_BEAR_SHADOW_PCT: float = 30.0   # 下ヒゲ比率下限（%）
-CONSEC_BEAR_VOL_MULT: float   = 1.5
-CONSEC_BEAR_RSI_HI: float     = 55.0
+CONSEC_BEAR_VOL_MULT: float   = 2.0
+CONSEC_BEAR_RSI_HI: float     = 45.0
 CONSEC_BEAR_RR: float         = 2.5
 
 # ニッポン・オプティマライザー（NOA）パラメータ
@@ -1703,6 +1713,8 @@ def run_screening(use_cache: bool = True) -> None:
         line_parts.append(performance_msg)
 
     for strategy_key, strategy_label in STRATEGIES.items():
+        if strategy_key not in NOTIFY_STRATEGIES:
+            continue
         results = all_results[strategy_key]
         if not results:
             logger.info(f"[{strategy_label}] 0件 → スキップ")
