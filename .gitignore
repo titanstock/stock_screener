@@ -1,1 +1,7 @@
 *.pkl
+.env
+venv/
+__pycache__/
+*.pyc
+.jq_token_cache.json
+node_modules/
