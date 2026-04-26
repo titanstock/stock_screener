@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-日本株スクリーニングツール（3戦略同時実行）
+日本株スクリーニングツール
 ================================
 対象市場  : スタンダード・グロース（内国株式）
-時価総額  : 300 億円以下
-戦略      : ①ブレイクアウト/出来高急増型 ②売られすぎ反発型 ③出来高枯渇反発型 ④連続陰線下ヒゲ反発型
+時価総額  : 500 億円以下
+戦略      : ②売られすぎ反発型 / NOA（ニッポン・オプティマライザー）
 実行タイミング: 毎日 16:00（JST）自動実行 / --now オプションで即時実行
 """
 
@@ -39,7 +39,7 @@ JQUANTS_API_BASE: str          = "https://api.jquants.com/v1"
 LINE_USER_ID: str              = os.getenv("LINE_USER_ID", "")
 LINE_PUSH_URL: str             = "https://api.line.me/v2/bot/message/push"
 DISCORD_WEBHOOK_URL: str       = os.getenv("DISCORD_WEBHOOK_URL", "")
-MAX_MARKET_CAP_YEN: int        = 300 * 10**8
+MAX_MARKET_CAP_YEN: int        = 500 * 10**8
 LINE_MAX_CHARS: int            = 5_000   # LINE テキストメッセージ上限
 TIMESTAMP_FMT: str             = "%Y/%m/%d %H:%M"
 
@@ -60,18 +60,13 @@ MAX_WORKERS: int = 8
 
 # 戦略定義（表示ラベル）
 STRATEGIES: dict[str, str] = {
-    "breakout":           "ブレイクアウト/出来高急増型",
-    "oversold_bounce":    "売られすぎ反発型（件数型）",
-    "vol_dry_bounce":     "出来高枯渇反発型",
-    "consec_bear_shadow": "連続陰線下ヒゲ反発型",
+    "oversold_bounce":    "売られすぎ反発型",
     "noa":                "ニッポン・オプティマライザー（NOA）",
 }
 
-# LINE/Discord 通知対象戦略（スクリーニングは全戦略で継続）
+# LINE/Discord 通知対象戦略
 NOTIFY_STRATEGIES: set[str] = {
     "oversold_bounce",
-    "vol_dry_bounce",
-    "consec_bear_shadow",
     "noa",
 }
 
@@ -83,26 +78,6 @@ OVERSOLD_BOUNCE_RSI_HI: float  = 30.0   # RSI14 上限
 OVERSOLD_BOUNCE_VOL_MULT: float = 1.5   # 出来高 ≥ 20日平均の1.5倍
 OVERSOLD_BOUNCE_RR: float      = 2.5    # リスクリワード比
 
-# 出来高枯渇反発型パラメータ
-# 条件: 5日枯渇 + 出来高2.0倍スパイク + RSI≤55 + MA25乖離≤10%
-# バックテスト実績: WR51.4% / PF1.58 / EV+1.73% / 1.22件/日（5年間）
-# 2026-04-22 グリッドサーチ結果: spike2.5x/RSI25-50/MA25≤5%は合格0件のため緩和
-VOL_DRY_DRY_DAYS: int    = 5
-VOL_DRY_SPIKE: float     = 2.0
-VOL_DRY_RSI_LO: float    = 0.0    # 下限撤廃
-VOL_DRY_RSI_HI: float    = 55.0
-VOL_DRY_MA25_DEV: float  = 10.0   # MA25乖離上限（%）
-VOL_DRY_RR: float        = 2.5
-
-# 連続陰線下ヒゲ反発型パラメータ
-# 条件: 5日連続陰線 + 下ヒゲ30%以上 + 出来高2.0倍 + RSI≤45
-# バックテスト実績: WR54.8% / PF1.49 / EV+1.76% / 1.63件/日（5年間）
-# 2026-04-22 グリッドサーチ結果: vol2.0x/RSI≤45 → WR55.7%/PF1.99 に改善
-CONSEC_BEAR_DAYS: int         = 5
-CONSEC_BEAR_SHADOW_PCT: float = 30.0   # 下ヒゲ比率下限（%）
-CONSEC_BEAR_VOL_MULT: float   = 2.0
-CONSEC_BEAR_RSI_HI: float     = 45.0
-CONSEC_BEAR_RR: float         = 2.5
 
 # ニッポン・オプティマライザー（NOA）パラメータ
 # 条件: RSI(30)≤30 + MACDがシグナル以下（下向き局面）
@@ -672,19 +647,6 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         if rsi <= OVERSOLD_BOUNCE_RSI_HI and vol_20x >= OVERSOLD_BOUNCE_VOL_MULT and atr_expand:
             matched["oversold_bounce"] = base.copy()
 
-        # ── 出来高枯渇反発型: 5日枯渇 + 出来高2.5倍 + RSI25-50 + MA25乖離≤5% ──
-        if (vol_dry_5d and vol_20x >= VOL_DRY_SPIKE
-                and VOL_DRY_RSI_LO <= rsi <= VOL_DRY_RSI_HI
-                and ma25_dev_pct <= VOL_DRY_MA25_DEV):
-            matched["vol_dry_bounce"] = base.copy()
-
-        # ── 連続陰線下ヒゲ反発型: 5日連続陰線 + 下ヒゲ30% + 出来高1.5倍 + RSI≤55 ──
-        if (consec_bear_count >= CONSEC_BEAR_DAYS
-                and lower_shadow_pct >= CONSEC_BEAR_SHADOW_PCT
-                and vol_20x >= CONSEC_BEAR_VOL_MULT
-                and rsi <= CONSEC_BEAR_RSI_HI):
-            matched["consec_bear_shadow"] = base.copy()
-
         # ── ニッポン・オプティマライザー（NOA）: RSI(30)≤30 + MACD下向き ──
         if (not pd.isna(rsi30)
                 and rsi30 <= NOA_RSI_HI
@@ -696,17 +658,11 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
 
         # ── 戦略ごとの買値目安・損切り・利確を付与 ──
         entry_prices = {
-            "breakout":           close,
             "oversold_bounce":    close,
-            "vol_dry_bounce":     close,
-            "consec_bear_shadow": close,
             "noa":                close,
         }
         rr_ratio = {
-            "breakout":           2.0,
             "oversold_bounce":    OVERSOLD_BOUNCE_RR,
-            "vol_dry_bounce":     VOL_DRY_RR,
-            "consec_bear_shadow": CONSEC_BEAR_RR,
             "noa":                NOA_RR,
         }
         for sk in list(matched.keys()):
@@ -872,31 +828,6 @@ def build_message(
                 f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
                 f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
                 f"  リスクリワード: 1:{OVERSOLD_BOUNCE_RR}",
-            ] + shinyo_lines
-        elif strategy_key == "vol_dry_bounce":
-            lines += [
-                f"  RSI(14)   : {r['rsi']:.1f}",
-                f"  出来高20比: {r['vol_20x']:.2f} 倍（枯渇後急増）",
-                f"  MA25乖離  : {r['ma25_dev_pct']:>+7.2f}%",
-                f"  日足MA25  : {r['ma25_daily']:>8,.1f}",
-                f"  [参考] ATR: {r['atr']:.1f}",
-                f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
-                f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
-                f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
-                f"  リスクリワード: 1:{VOL_DRY_RR}",
-            ] + shinyo_lines
-        elif strategy_key == "consec_bear_shadow":
-            lines += [
-                f"  RSI(14)   : {r['rsi']:.1f}",
-                f"  連続陰線  : {r['consec_bear_count']} 日",
-                f"  下ヒゲ比率: {r['lower_shadow_pct']:.1f}%",
-                f"  出来高20比: {r['vol_20x']:.2f} 倍",
-                f"  前日比    : {r['change_pct']:>+7.2f}%",
-                f"  日足MA25  : {r['ma25_daily']:>8,.1f}",
-                f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
-                f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
-                f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
-                f"  リスクリワード: 1:{CONSEC_BEAR_RR}",
             ] + shinyo_lines
         elif strategy_key == "noa":
             lines += [
@@ -1284,10 +1215,7 @@ _MEDALS = ["🥇", "🥈", "🥉"]
 # 戦略ごとのスコア定義
 _SCORE_RULES: dict[str, list[tuple]] = {
     # (条件関数, 点数, 説明)
-    "breakout":           [],   # スコアなし
     "oversold_bounce":    [],   # スコアなし
-    "vol_dry_bounce":     [],   # スコアなし
-    "consec_bear_shadow": [],   # スコアなし
     "noa":                [],   # スコアなし
 }
 
@@ -1433,7 +1361,7 @@ def add_position(
                     stop_atr = entry_price - atr * 2.0
                     stop = max(stop_atr, entry_price * 0.90)
                 if take is None:
-                    rr_map = {"breakout": 2.0, "oversold_bounce": OVERSOLD_BOUNCE_RR, "vol_dry_bounce": VOL_DRY_RR, "consec_bear_shadow": CONSEC_BEAR_RR, "noa": NOA_RR}
+                    rr_map = {"oversold_bounce": OVERSOLD_BOUNCE_RR, "noa": NOA_RR}
                     rr  = rr_map.get(strategy_type, 1.5)
                     take = entry_price + (entry_price - stop) * rr
 
@@ -1761,10 +1689,10 @@ if __name__ == "__main__":
         entry = _arg("--entry")
         stype = _arg("--type")
         if not code or not entry or not stype:
-            print("使い方: --add-position --code CODE --entry PRICE --type {breakout|oversold_bounce|vol_dry_bounce|consec_bear_shadow|noa} [--stop STOP] [--take TAKE]")
+            print("使い方: --add-position --code CODE --entry PRICE --type {oversold_bounce|noa} [--stop STOP] [--take TAKE]")
             sys.exit(1)
-        if stype not in ("breakout", "oversold_bounce", "vol_dry_bounce", "consec_bear_shadow", "noa"):
-            print(f"--type は breakout / oversold_bounce / vol_dry_bounce / consec_bear_shadow / noa のいずれかを指定してください。")
+        if stype not in ("oversold_bounce", "noa"):
+            print(f"--type は oversold_bounce / noa のいずれかを指定してください。")
             sys.exit(1)
         stop_val = _arg("--stop")
         take_val = _arg("--take")
