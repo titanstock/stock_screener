@@ -2,8 +2,7 @@
 .env
 .jq_token_cache.json
 
-# キャッシュ・大容量ファイル
-*.pkl
+# キャッシュ・大容量ファイル（*.pklはGit LFSで管理）
 *.pyc
 __pycache__/
 
