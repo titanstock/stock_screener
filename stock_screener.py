@@ -62,12 +62,14 @@ MAX_WORKERS: int = 8
 STRATEGIES: dict[str, str] = {
     "oversold_bounce":    "売られすぎ反発型",
     "noa":                "ニッポン・オプティマライザー（NOA）",
+    "minervini":          "ミネルヴィニ SEPA型",
 }
 
 # LINE/Discord 通知対象戦略
 NOTIFY_STRATEGIES: set[str] = {
     "oversold_bounce",
     "noa",
+    "minervini",
 }
 
 
@@ -86,6 +88,18 @@ NOA_RSI_PERIOD: int   = 30
 NOA_RSI_HI: float     = 30.0
 NOA_RR: float         = 2.0
 NOA_MAX_HOLD: int     = 10   # 最大保有日数（パフォーマンス追跡用）
+
+# ミネルヴィニ SEPA型パラメータ
+# 条件: パーフェクトオーダー + MA200上昇 + 52週安値+30% + 52週高値-25%以内 + ブレイクアウト + 出来高
+# バックテスト実績: PF2.04 / EV+4.33% / 2.74件/日（5年間, 500〜5000億）
+MINERVINI_BREAKOUT_DAYS: int  = 20     # ブレイクアウト判定期間（日）
+MINERVINI_VOL_MULT: float     = 1.5    # 出来高 ≥ 20日平均の1.5倍
+MINERVINI_STOP_PCT: float     = 0.10   # 初期損切り幅（エントリー比-10%）
+MINERVINI_SLOPE_DAYS: int     = 20     # MA200上昇確認期間（日）
+MINERVINI_MIN_RISE_FROM_LOW: float = 30.0  # 52週安値からの上昇率下限（%）
+MINERVINI_NEAR_HIGH_PCT: float = 25.0  # 52週高値からの最大乖離（%）
+MINERVINI_MIN_CAP: int        = 500  * 10**8   # 500億円
+MINERVINI_MAX_CAP: int        = 5000 * 10**8   # 5000億円
 
 # 結果保存ディレクトリ
 RESULTS_DIR = Path(__file__).parent / "results"
@@ -512,10 +526,15 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         stock = yf.Ticker(ticker)
 
         market_cap = get_market_cap(stock)
-        if market_cap <= 0 or market_cap > MAX_MARKET_CAP_YEN:
+        if market_cap <= 0:
+            return None
+        # 既存戦略は500億以下、ミネルヴィニは500〜5000億を対象
+        in_small   = market_cap <= MAX_MARKET_CAP_YEN
+        in_minerv  = MINERVINI_MIN_CAP <= market_cap <= MINERVINI_MAX_CAP
+        if not in_small and not in_minerv:
             return None
 
-        df = fetch_history(ticker, days=400)
+        df = fetch_history(ticker, days=500)
         if df is None or len(df) < BREAKOUT_DAYS + 5:
             return None
 
@@ -586,14 +605,18 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         _lower_shadow = min(open_now, close) - low_now
         lower_shadow_pct = (_lower_shadow / _range * 100) if _range > 0 else 0.0
 
-        # 出来高枯渇フラグ（直近5日の最大出来高が平均以下）
-        vol_dry_5d = (
-            len(df) >= VOL_DRY_DRY_DAYS + 2 and avg_vol_20 > 0 and
-            float(df["Volume"].iloc[-VOL_DRY_DRY_DAYS-1:-1].max()) < avg_vol_20
-        )
-
         # MA25乖離率
         ma25_dev_pct = ((close - ma25_daily) / ma25_daily * 100) if ma25_daily > 0 else 0.0
+
+        # ── ミネルヴィニ用 MA50/150/200 計算 ──
+        ma50  = float(df["Close"].rolling(50).mean().iloc[-1])
+        ma150 = float(df["Close"].rolling(150).mean().iloc[-1])
+        ma200 = float(df["Close"].rolling(200).mean().iloc[-1])
+        ma200_prev = float(df["Close"].rolling(200).mean().iloc[-1 - MINERVINI_SLOPE_DAYS]) \
+            if len(df) > 200 + MINERVINI_SLOPE_DAYS else float("nan")
+        wk52_lo = float(df["Low"].iloc[-252:].min())
+        wk52_hi = float(df["High"].iloc[-252:].max())
+        minerv_breakout_hi = float(df["High"].iloc[-MINERVINI_BREAKOUT_DAYS - 1:-1].max())
 
         matched_keys = evaluate_strategies(
             df          = df,
@@ -638,20 +661,47 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         matched: dict[str, dict] = {sk: base.copy() for sk in matched_keys}
 
         # ── 売られすぎ反発型（件数型）: RSI14≤30 + 出来高1.5倍 + ATR拡大 ──
-        atr3d_now  = float(df["ATR"].iloc[-3:].mean())
-        atr3d_prev = float(df["ATR"].iloc[-6:-3].mean())
-        atr_expand = (
-            not pd.isna(atr3d_now) and not pd.isna(atr3d_prev)
-            and atr3d_prev > 0 and atr3d_now > atr3d_prev
-        )
-        if rsi <= OVERSOLD_BOUNCE_RSI_HI and vol_20x >= OVERSOLD_BOUNCE_VOL_MULT and atr_expand:
-            matched["oversold_bounce"] = base.copy()
+        if in_small:
+            atr3d_now  = float(df["ATR"].iloc[-3:].mean())
+            atr3d_prev = float(df["ATR"].iloc[-6:-3].mean())
+            atr_expand = (
+                not pd.isna(atr3d_now) and not pd.isna(atr3d_prev)
+                and atr3d_prev > 0 and atr3d_now > atr3d_prev
+            )
+            if rsi <= OVERSOLD_BOUNCE_RSI_HI and vol_20x >= OVERSOLD_BOUNCE_VOL_MULT and atr_expand:
+                matched["oversold_bounce"] = base.copy()
 
         # ── ニッポン・オプティマライザー（NOA）: RSI(30)≤30 + MACD下向き ──
-        if (not pd.isna(rsi30)
+        if (in_small
+                and not pd.isna(rsi30)
                 and rsi30 <= NOA_RSI_HI
                 and macd_now < sig_now):
             matched["noa"] = base.copy()
+
+        # ── ミネルヴィニ SEPA型: パーフェクトオーダー + ブレイクアウト ──
+        if (in_minerv
+                and not any(pd.isna(v) for v in [ma50, ma150, ma200, ma200_prev])
+                and close > ma50 > ma150 > ma200
+                and ma200 > ma200_prev
+                and close >= wk52_lo * (1 + MINERVINI_MIN_RISE_FROM_LOW / 100)
+                and close >= wk52_hi * (1 - MINERVINI_NEAR_HIGH_PCT / 100)
+                and close > minerv_breakout_hi
+                and vol_20x >= MINERVINI_VOL_MULT
+                and len(df) >= 41):
+            # 値固め確認①: ベース前半(40〜20日前)より収縮フェーズ(直近20日)の出来高が30%以上減少
+            base_vol   = float(df["Volume"].iloc[-40:-20].mean())
+            shrink_vol = float(df["Volume"].iloc[-20:].mean())
+            volume_drying = base_vol > 0 and shrink_vol < base_vol * 0.8
+
+            # 値固め確認②: 収縮フェーズのレンジ < ベース前半のレンジ
+            pre_hi  = float(df["High"].iloc[-40:-20].max())
+            pre_lo  = float(df["Low"].iloc[-40:-20].min())
+            cons_hi = float(df["High"].iloc[-20:-1].max())
+            cons_lo = float(df["Low"].iloc[-20:-1].min())
+            range_contracting = (pre_hi - pre_lo) > 0 and (cons_hi - cons_lo) < (pre_hi - pre_lo)
+
+            if volume_drying and range_contracting:
+                matched["minervini"] = base.copy()
 
         if not matched:
             return None
@@ -666,6 +716,17 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
             "noa":                NOA_RR,
         }
         for sk in list(matched.keys()):
+            if sk == "minervini":
+                # 損切り = 収縮フェーズ(直近20日)の最安値の1%下、最大-15%でキャップ
+                entry       = close
+                consol_lo   = float(df["Low"].iloc[-20:-1].min())
+                stop        = consol_lo * 0.99
+                stop        = max(stop, entry * (1 - MINERVINI_STOP_PCT * 1.5))  # 最大-15%
+                matched[sk]["entry_price"]  = entry
+                matched[sk]["stop_loss"]    = stop
+                matched[sk]["stop_capped"]  = stop == entry * (1 - MINERVINI_STOP_PCT * 1.5)
+                matched[sk]["take_profit"]  = None  # トレーリングストップで管理
+                continue
             entry     = entry_prices[sk]
             stop_atr  = entry - atr * 2.0
             stop_cap  = entry * 0.90          # 上限: -10%
@@ -698,6 +759,8 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
 # ──────────────────────────────────────────────────────────────────────────────
 def send_line_notify(message: str) -> bool:
     """LINE Messaging API の push message で送信する。5000文字超は分割して送る。"""
+    if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_USER_ID:
+        return False
     chunks  = [message[i:i+LINE_MAX_CHARS] for i in range(0, len(message), LINE_MAX_CHARS)]
     headers = {
         "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
@@ -839,6 +902,18 @@ def build_message(
                 f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
                 f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
                 f"  リスクリワード: 1:{NOA_RR}",
+            ] + shinyo_lines
+        elif strategy_key == "minervini":
+            stop_pct_actual = (r['stop_loss'] - r['entry_price']) / r['entry_price'] * 100
+            lines += [
+                f"  ブレイクアウト: {r['breakout_pct']:>+.2f}%（20日高値比）",
+                f"  出来高20比: {r['vol_20x']:.2f} 倍",
+                f"  前日比    : {r['change_pct']:>+7.2f}%",
+                f"  RSI(14)   : {r['rsi']:.1f}",
+                f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
+                f"  損切り    : {r['stop_loss']:>8,.0f} 円（収縮安値-1% / {stop_pct_actual:.1f}%）"
+                + ("  ※上限キャップ適用" if r.get("stop_capped") else ""),
+                f"  利確      : トレーリングストップ20%で管理（利確ライン設定なし）",
             ] + shinyo_lines
 
     return "\n".join(lines)
@@ -1673,8 +1748,7 @@ def run_screening(use_cache: bool = True) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     if not LINE_CHANNEL_ACCESS_TOKEN or not LINE_USER_ID:
-        logger.error("LINE_CHANNEL_ACCESS_TOKEN または LINE_USER_ID が未設定です。.env を確認してください。")
-        sys.exit(1)
+        logger.warning("LINE_CHANNEL_ACCESS_TOKEN または LINE_USER_ID が未設定です。LINE通知をスキップします。")
 
     def _arg(flag: str) -> str | None:
         """sys.argv から --flag VALUE を取得するヘルパー。"""
