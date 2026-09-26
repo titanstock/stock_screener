@@ -29,7 +29,7 @@ MAX_WORKERS    = 30
 
 JPX_LIST_URL = (
     "https://www.jpx.co.jp/markets/statistics-equities/misc/"
-    "tvdivq0000001vg2-att/data_j.xls"
+    "tvdivq0000001vg2-att/data_j.xlsx"
 )
 
 

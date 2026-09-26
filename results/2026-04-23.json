@@ -1,0 +1,69 @@
+{
+  "date": "2026-04-23",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [
+      {
+        "code": "2437",
+        "name": "Shinwa Wise Holdings Co.,Ltd.",
+        "close": 465.0,
+        "entry_price": 465.0,
+        "stop_loss": 418.5,
+        "take_profit": 581.25,
+        "stop_capped": true,
+        "rsi": 26.22045659395185,
+        "rsi30": 36.24171789904633,
+        "macd": -39.05838969435206,
+        "macd_signal": -4.781099356003062,
+        "macd_dir": "down"
+      },
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 219.0,
+        "entry_price": 219.0,
+        "stop_loss": 197.1,
+        "take_profit": 273.75,
+        "stop_capped": true,
+        "rsi": 24.152063471360208,
+        "rsi30": 27.756917854928446,
+        "macd": -40.03096648168753,
+        "macd_signal": -25.825232294303273,
+        "macd_dir": "down"
+      }
+    ],
+    "vol_dry_bounce": [],
+    "consec_bear_shadow": [],
+    "noa": [
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 219.0,
+        "entry_price": 219.0,
+        "stop_loss": 197.1,
+        "take_profit": 262.8,
+        "stop_capped": true,
+        "rsi": 24.152063471360208,
+        "rsi30": 27.756917854928446,
+        "macd": -40.03096648168753,
+        "macd_signal": -25.825232294303273,
+        "macd_dir": "down"
+      },
+      {
+        "code": "7709",
+        "name": "KUBOTEK Corporation",
+        "close": 97.0,
+        "entry_price": 97.0,
+        "stop_loss": 87.3,
+        "take_profit": 116.4,
+        "stop_capped": true,
+        "rsi": 24.78616832351659,
+        "rsi30": 28.22955207687066,
+        "macd": -12.116183729927513,
+        "macd_signal": -11.884987954053877,
+        "macd_dir": "down"
+      }
+    ]
+  },
+  "performance": []
+}

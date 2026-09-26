@@ -1,0 +1,204 @@
+{
+  "date": "2026-07-14",
+  "strategies": {
+    "oversold_bounce": [
+      {
+        "code": "6380",
+        "name": "Oriental Chain Mfg. Co., Ltd.",
+        "close": 4010.0,
+        "entry_price": 4010.0,
+        "stop_loss": 3657.1428571428573,
+        "take_profit": 4892.142857142857,
+        "stop_capped": false,
+        "rsi": 26.002076596744814,
+        "rsi30": 39.420355803212324,
+        "macd": -162.38722614780454,
+        "macd_signal": -82.51058658904194,
+        "macd_dir": "down"
+      },
+      {
+        "code": "7373",
+        "name": "Aidma Holdings, Inc.",
+        "close": 1005.0,
+        "entry_price": 1005.0,
+        "stop_loss": 907.0,
+        "take_profit": 1250.0,
+        "stop_capped": false,
+        "rsi": 29.00244241290237,
+        "rsi30": 35.23844094962274,
+        "macd": -13.316526799695566,
+        "macd_signal": 1.9285042595973616,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [],
+    "minervini": []
+  },
+  "performance": [
+    {
+      "code": "319A",
+      "name": "NEXT GENERATION TECHNOLOGY GROU",
+      "entry_price": 19540.0,
+      "stop_loss": 16609.0,
+      "take_profit": null,
+      "close_prev": 19540.0,
+      "close_now": 20660.0,
+      "change_pct": 5.731832139201638,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1005.0,
+      "stop_loss": 907.0,
+      "take_profit": 1250.0,
+      "close_prev": 1005.0,
+      "close_now": 1001.0,
+      "change_pct": -0.3980099502487562,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9270",
+      "name": "Valuence Holdings Inc.",
+      "entry_price": 1972.0,
+      "stop_loss": 1774.8,
+      "take_profit": 2465.0,
+      "close_prev": 1972.0,
+      "close_now": 2095.0,
+      "change_pct": 6.237322515212982,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6380",
+      "name": "Oriental Chain Mfg. Co., Ltd.",
+      "entry_price": 4010.0,
+      "stop_loss": 3657.1428571428573,
+      "take_profit": 4892.142857142857,
+      "close_prev": 4010.0,
+      "close_now": 3945.0,
+      "change_pct": -1.6209476309226933,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2705",
+      "name": "OOTOYA Holdings Co., Ltd.",
+      "entry_price": 8280.0,
+      "stop_loss": 7038.0,
+      "take_profit": null,
+      "close_prev": 8280.0,
+      "close_now": 8190.0,
+      "change_pct": -1.0869565217391304,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "2970",
+      "name": "Glc Group,Inc.",
+      "entry_price": 927.0,
+      "stop_loss": 854.1428571428571,
+      "take_profit": 1109.1428571428573,
+      "close_prev": 927.0,
+      "close_now": 962.0,
+      "change_pct": 3.7756202804746493,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6156",
+      "name": "A-One Seimitsu Inc.",
+      "entry_price": 1742.0,
+      "stop_loss": 1661.770167608446,
+      "take_profit": 1942.574580978885,
+      "close_prev": 1742.0,
+      "close_now": 1768.0,
+      "change_pct": 1.4925373134328357,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3242",
+      "name": "Urbanet Corporation Co.,Ltd.",
+      "entry_price": 487.0,
+      "stop_loss": 475.21374402240315,
+      "take_profit": 516.4656399439921,
+      "close_prev": 487.0,
+      "close_now": 497.0,
+      "change_pct": 2.0533880903490758,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7806",
+      "name": "MTG Co., Ltd.",
+      "entry_price": 8100.0,
+      "stop_loss": 6885.0,
+      "take_profit": null,
+      "close_prev": 8100.0,
+      "close_now": 7700.0,
+      "change_pct": -4.938271604938271,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "2805",
+      "name": "S&B Foods Inc.",
+      "entry_price": 5730.0,
+      "stop_loss": 4875.75,
+      "take_profit": null,
+      "close_prev": 5730.0,
+      "close_now": 6070.0,
+      "change_pct": 5.93368237347295,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "6824",
+      "name": "New Cosmos Electric Co.,Ltd.",
+      "entry_price": 5790.0,
+      "stop_loss": 4921.5,
+      "take_profit": null,
+      "close_prev": 5790.0,
+      "close_now": 5050.0,
+      "change_pct": -12.780656303972366,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,461 @@
+{
+  "date": "2026-04-22",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [
+      {
+        "code": "2437",
+        "name": "Shinwa Wise Holdings Co.,Ltd.",
+        "close": 457.0,
+        "entry_price": 457.0,
+        "stop_loss": 411.3,
+        "take_profit": 571.25,
+        "stop_capped": true,
+        "rsi": 25.23486710834024,
+        "rsi30": 38.265822622043274,
+        "macd": -24.815568960012456,
+        "macd_signal": 5.948846696251503,
+        "macd_dir": "down"
+      },
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 203.0,
+        "entry_price": 203.0,
+        "stop_loss": 182.70000000000002,
+        "take_profit": 253.74999999999994,
+        "stop_capped": true,
+        "rsi": 17.161718796782353,
+        "rsi30": 23.644986918231197,
+        "macd": -38.22918851099064,
+        "macd_signal": -22.26048616089067,
+        "macd_dir": "down"
+      }
+    ],
+    "vol_dry_bounce": [
+      {
+        "code": "2673",
+        "name": "YUMEMITSUKETAI Co.,Ltd.",
+        "close": 152.0,
+        "entry_price": 152.0,
+        "stop_loss": 138.71428571428572,
+        "take_profit": 185.2142857142857,
+        "stop_capped": false,
+        "rsi": 45.086866404353685,
+        "rsi30": 43.004939001542326,
+        "macd": -11.748559110412543,
+        "macd_signal": -13.575763829202542,
+        "macd_dir": "up"
+      },
+      {
+        "code": "4274",
+        "name": "Hosoya Pyro-Engineering Co., Ltd.",
+        "close": 1318.0,
+        "entry_price": 1318.0,
+        "stop_loss": 1207.857142857143,
+        "take_profit": 1593.3571428571427,
+        "stop_capped": false,
+        "rsi": 47.1255349634005,
+        "rsi30": 50.276471107373844,
+        "macd": -27.78255497515238,
+        "macd_signal": -19.697889157298697,
+        "macd_dir": "down"
+      },
+      {
+        "code": "477A",
+        "name": "STARTLINE CO LTD",
+        "close": 563.0,
+        "entry_price": 563.0,
+        "stop_loss": 516.8571428571429,
+        "take_profit": 678.3571428571428,
+        "stop_capped": false,
+        "rsi": 47.72887590758383,
+        "rsi30": 40.84384489613952,
+        "macd": -28.156928856081777,
+        "macd_signal": -36.77909057568102,
+        "macd_dir": "up"
+      }
+    ],
+    "consec_bear_shadow": [
+      {
+        "code": "1381",
+        "name": "AXYZ Co., Ltd.",
+        "close": 3830.0,
+        "entry_price": 3830.0,
+        "stop_loss": 3601.4285714285716,
+        "take_profit": 4401.428571428571,
+        "stop_capped": false,
+        "rsi": 51.54424354279575,
+        "rsi30": 49.89223139136728,
+        "macd": 36.332900958223036,
+        "macd_signal": 25.24280264685091,
+        "macd_dir": "up"
+      },
+      {
+        "code": "3236",
+        "name": "Properst Co., Ltd.",
+        "close": 339.0,
+        "entry_price": 339.0,
+        "stop_loss": 311.42857142857144,
+        "take_profit": 407.9285714285714,
+        "stop_capped": false,
+        "rsi": 40.80072190941415,
+        "rsi30": 46.2986994677781,
+        "macd": -2.4725816645018313,
+        "macd_signal": -2.2758827185823147,
+        "macd_dir": "down"
+      },
+      {
+        "code": "462A",
+        "name": "FUNDINNO INC",
+        "close": 805.0,
+        "entry_price": 805.0,
+        "stop_loss": 724.5,
+        "take_profit": 1006.25,
+        "stop_capped": true,
+        "rsi": 35.577762361507,
+        "rsi30": 42.09008713214936,
+        "macd": -26.32772913757367,
+        "macd_signal": -14.33488512450705,
+        "macd_dir": "down"
+      },
+      {
+        "code": "9768",
+        "name": "IDEA Consultants,Inc.",
+        "close": 3725.0,
+        "entry_price": 3725.0,
+        "stop_loss": 3595.0,
+        "take_profit": 4050.0,
+        "stop_capped": false,
+        "rsi": 35.387857625001345,
+        "rsi30": 43.198096572704564,
+        "macd": -83.44056241069848,
+        "macd_signal": -76.12878953071719,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 203.0,
+        "entry_price": 203.0,
+        "stop_loss": 182.70000000000002,
+        "take_profit": 243.59999999999997,
+        "stop_capped": true,
+        "rsi": 17.161718796782353,
+        "rsi30": 23.644986918231197,
+        "macd": -38.22918851099064,
+        "macd_signal": -22.26048616089067,
+        "macd_dir": "down"
+      }
+    ]
+  },
+  "performance": [
+    {
+      "code": "2901",
+      "name": "Wel-Dish.Incorporated",
+      "entry_price": 203.0,
+      "stop_loss": 182.70000000000002,
+      "take_profit": 253.74999999999994,
+      "close_prev": 203.0,
+      "close_now": 219.0,
+      "change_pct": 7.8817733990147785,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "9768",
+      "name": "IDEA Consultants,Inc.",
+      "entry_price": 3725.0,
+      "stop_loss": 3595.0,
+      "take_profit": 4050.0,
+      "close_prev": 3725.0,
+      "close_now": 3735.0,
+      "change_pct": 0.2684563758389262,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "462A",
+      "name": "FUNDINNO INC",
+      "entry_price": 805.0,
+      "stop_loss": 724.5,
+      "take_profit": 1006.25,
+      "close_prev": 805.0,
+      "close_now": 809.0,
+      "change_pct": 0.4968944099378882,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "4274",
+      "name": "Hosoya Pyro-Engineering Co., Ltd.",
+      "entry_price": 1318.0,
+      "stop_loss": 1207.857142857143,
+      "take_profit": 1593.3571428571427,
+      "close_prev": 1318.0,
+      "close_now": 1307.0,
+      "change_pct": -0.834597875569044,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 457.0,
+      "stop_loss": 411.3,
+      "take_profit": 571.25,
+      "close_prev": 457.0,
+      "close_now": 465.0,
+      "change_pct": 1.75054704595186,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "2673",
+      "name": "YUMEMITSUKETAI Co.,Ltd.",
+      "entry_price": 152.0,
+      "stop_loss": 138.71428571428572,
+      "take_profit": 185.2142857142857,
+      "close_prev": 152.0,
+      "close_now": 142.0,
+      "change_pct": -6.578947368421052,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "3236",
+      "name": "Properst Co., Ltd.",
+      "entry_price": 339.0,
+      "stop_loss": 311.42857142857144,
+      "take_profit": 407.9285714285714,
+      "close_prev": 339.0,
+      "close_now": 339.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "477A",
+      "name": "STARTLINE CO LTD",
+      "entry_price": 563.0,
+      "stop_loss": 516.8571428571429,
+      "take_profit": 678.3571428571428,
+      "close_prev": 563.0,
+      "close_now": 593.0,
+      "change_pct": 5.328596802841918,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "4374",
+      "name": "Robot Payment Inc.",
+      "entry_price": 2261.0,
+      "stop_loss": 2087.8571428571427,
+      "take_profit": 2693.857142857143,
+      "close_prev": 2261.0,
+      "close_now": 2273.0,
+      "change_pct": 0.5307386112339673,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "4598",
+      "name": "Delta-Fly Pharma, Inc.",
+      "entry_price": 204.0,
+      "stop_loss": 186.0,
+      "take_profit": 249.0,
+      "close_prev": 204.0,
+      "close_now": 205.0,
+      "change_pct": 0.49019607843137253,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "4439",
+      "name": "Toumei Co.,Ltd.",
+      "entry_price": 819.0,
+      "stop_loss": 762.2857142857143,
+      "take_profit": 960.7857142857142,
+      "close_prev": 819.0,
+      "close_now": 854.0,
+      "change_pct": 4.273504273504273,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1297.0,
+      "stop_loss": 1167.3,
+      "take_profit": 1621.25,
+      "close_prev": 1297.0,
+      "close_now": 1320.0,
+      "change_pct": 1.7733230531996915,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "1381",
+      "name": "AXYZ Co., Ltd.",
+      "entry_price": 3830.0,
+      "stop_loss": 3601.4285714285716,
+      "take_profit": 4401.428571428571,
+      "close_prev": 3830.0,
+      "close_now": 3785.0,
+      "change_pct": -1.1749347258485638,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "4316",
+      "name": "BeMap, Inc.",
+      "entry_price": 206.0,
+      "stop_loss": 185.4,
+      "take_profit": 247.2,
+      "close_prev": 206.0,
+      "close_now": 234.0,
+      "change_pct": 13.592233009708737,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "3185",
+      "name": "Dream Vision Co.,Ltd.",
+      "entry_price": 178.0,
+      "stop_loss": 160.20000000000002,
+      "take_profit": 222.49999999999994,
+      "close_prev": 178.0,
+      "close_now": 179.0,
+      "change_pct": 0.5617977528089888,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "9168",
+      "name": "Rise Consulting Group, Inc.",
+      "entry_price": 404.0,
+      "stop_loss": 366.42857142857144,
+      "take_profit": 497.9285714285714,
+      "close_prev": 404.0,
+      "close_now": 430.0,
+      "change_pct": 6.435643564356436,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "4889",
+      "name": "Renascience Inc.",
+      "entry_price": 1446.0,
+      "stop_loss": 1301.4,
+      "take_profit": 1807.4999999999998,
+      "close_prev": 1446.0,
+      "close_now": 1334.0,
+      "change_pct": -7.745504840940526,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "372A",
+      "name": "372A.T",
+      "entry_price": 5700.0,
+      "stop_loss": 5434.285714285715,
+      "take_profit": 6364.285714285714,
+      "close_prev": 5700.0,
+      "close_now": 5610.0,
+      "change_pct": -1.5789473684210527,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "339A",
+      "name": "PROGRESS TECHNOLOGIES GROUP INC",
+      "entry_price": 1349.0,
+      "stop_loss": 1247.7142857142858,
+      "take_profit": 1602.2142857142856,
+      "close_prev": 1349.0,
+      "close_now": 1132.0,
+      "change_pct": -16.08598962194218,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "5248",
+      "name": "TECHNOLOGIES, Inc.",
+      "entry_price": 455.0,
+      "stop_loss": 416.42857142857144,
+      "take_profit": 551.4285714285713,
+      "close_prev": 455.0,
+      "close_now": 466.0,
+      "change_pct": 2.417582417582418,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    }
+  ]
+}

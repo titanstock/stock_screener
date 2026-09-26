@@ -34,7 +34,7 @@ CACHE_PATH    = Path(__file__).parent / "backtest_cache.pkl"
 CACHE_MAX_AGE = 3          # キャッシュが何日以上古ければリフレッシュするか
 JPX_LIST_URL  = (
     "https://www.jpx.co.jp/markets/statistics-equities/misc/"
-    "tvdivq0000001vg2-att/data_j.xls"
+    "tvdivq0000001vg2-att/data_j.xlsx"
 )
 JQUANTS_BASE  = "https://api.jquants.com/v1"
 JQUANTS_TOKEN = os.getenv("JQUANTS_REFRESH_TOKEN", "")

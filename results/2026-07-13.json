@@ -1,0 +1,247 @@
+{
+  "date": "2026-07-13",
+  "strategies": {
+    "oversold_bounce": [
+      {
+        "code": "6380",
+        "name": "6380.T",
+        "close": 3935.0,
+        "entry_price": 3935.0,
+        "stop_loss": 3595.714285714286,
+        "take_profit": 4783.214285714285,
+        "stop_capped": false,
+        "rsi": 21.378481004841007,
+        "rsi30": 39.61260597399779,
+        "macd": -138.39563925165385,
+        "macd_signal": -61.72627817678204,
+        "macd_dir": "down"
+      },
+      {
+        "code": "7373",
+        "name": "Aidma Holdings, Inc.",
+        "close": 1013.0,
+        "entry_price": 1013.0,
+        "stop_loss": 913.7142857142857,
+        "take_profit": 1261.2142857142858,
+        "stop_capped": false,
+        "rsi": 29.41471153081787,
+        "rsi30": 34.368081554531756,
+        "macd": -2.9294638144860983,
+        "macd_signal": -0.13388306075286877,
+        "macd_dir": "down"
+      },
+      {
+        "code": "9270",
+        "name": "Valuence Holdings Inc.",
+        "close": 1972.0,
+        "entry_price": 1972.0,
+        "stop_loss": 1774.8,
+        "take_profit": 2465.0,
+        "stop_capped": true,
+        "rsi": 28.209109558243426,
+        "rsi30": 34.25475308966294,
+        "macd": -92.05992805428332,
+        "macd_signal": -69.81841521964913,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [],
+    "minervini": [
+      {
+        "code": "2705",
+        "name": "OOTOYA Holdings Co., Ltd.",
+        "close": 8280.0,
+        "entry_price": 8280.0,
+        "stop_loss": 7038.0,
+        "take_profit": null,
+        "stop_capped": true,
+        "rsi": 73.197814682189,
+        "rsi30": 63.8629469523473,
+        "macd": 190.29753889881977,
+        "macd_signal": 114.63922764911457,
+        "macd_dir": "up"
+      },
+      {
+        "code": "319A",
+        "name": "NEXT GENERATION TECHNOLOGY GROU",
+        "close": 19540.0,
+        "entry_price": 19540.0,
+        "stop_loss": 16609.0,
+        "take_profit": null,
+        "stop_capped": true,
+        "rsi": 64.87124845464189,
+        "rsi30": 60.059418225411775,
+        "macd": 430.5555540886089,
+        "macd_signal": 258.49980797755836,
+        "macd_dir": "up"
+      }
+    ]
+  },
+  "performance": [
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1013.0,
+      "stop_loss": 913.7142857142857,
+      "take_profit": 1261.2142857142858,
+      "close_prev": 1013.0,
+      "close_now": 1005.0,
+      "change_pct": -0.7897334649555774,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "319A",
+      "name": "NEXT GENERATION TECHNOLOGY GROU",
+      "entry_price": 19540.0,
+      "stop_loss": 16609.0,
+      "take_profit": null,
+      "close_prev": 19540.0,
+      "close_now": 20370.0,
+      "change_pct": 4.247697031729785,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "6380",
+      "name": "6380.T",
+      "entry_price": 3935.0,
+      "stop_loss": 3595.714285714286,
+      "take_profit": 4783.214285714285,
+      "close_prev": 3935.0,
+      "close_now": 4010.0,
+      "change_pct": 1.9059720457433291,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9270",
+      "name": "Valuence Holdings Inc.",
+      "entry_price": 1972.0,
+      "stop_loss": 1774.8,
+      "take_profit": 2465.0,
+      "close_prev": 1972.0,
+      "close_now": 2170.0,
+      "change_pct": 10.04056795131846,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6156",
+      "name": "A-One Seimitsu Inc.",
+      "entry_price": 1742.0,
+      "stop_loss": 1661.770167608446,
+      "take_profit": 1942.574580978885,
+      "close_prev": 1742.0,
+      "close_now": 1761.0,
+      "change_pct": 1.0907003444316876,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3242",
+      "name": "Urbanet Corporation Co.,Ltd.",
+      "entry_price": 487.0,
+      "stop_loss": 475.21374402240315,
+      "take_profit": 516.4656399439921,
+      "close_prev": 487.0,
+      "close_now": 494.0,
+      "change_pct": 1.4373716632443532,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2705",
+      "name": "OOTOYA Holdings Co., Ltd.",
+      "entry_price": 8280.0,
+      "stop_loss": 7038.0,
+      "take_profit": null,
+      "close_prev": 8280.0,
+      "close_now": 8410.0,
+      "change_pct": 1.570048309178744,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "2970",
+      "name": "Glc Group,Inc.",
+      "entry_price": 927.0,
+      "stop_loss": 854.1428571428571,
+      "take_profit": 1109.1428571428573,
+      "close_prev": 927.0,
+      "close_now": 948.0,
+      "change_pct": 2.26537216828479,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2805",
+      "name": "S&B Foods Inc.",
+      "entry_price": 5730.0,
+      "stop_loss": 4875.75,
+      "take_profit": null,
+      "close_prev": 5730.0,
+      "close_now": 5750.0,
+      "change_pct": 0.34904013961605584,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "7806",
+      "name": "MTG Co., Ltd.",
+      "entry_price": 8100.0,
+      "stop_loss": 6885.0,
+      "take_profit": null,
+      "close_prev": 8100.0,
+      "close_now": 7340.0,
+      "change_pct": -9.382716049382717,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "6824",
+      "name": "New Cosmos Electric Co.,Ltd.",
+      "entry_price": 5790.0,
+      "stop_loss": 4921.5,
+      "take_profit": null,
+      "close_prev": 5790.0,
+      "close_now": 4950.0,
+      "change_pct": -14.507772020725387,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    }
+  ]
+}

@@ -36,7 +36,7 @@ CACHE_PATH    = Path(__file__).parent / "backtest_cache.pkl"
 CACHE_MAX_AGE = 3
 JPX_LIST_URL  = (
     "https://www.jpx.co.jp/markets/statistics-equities/misc/"
-    "tvdivq0000001vg2-att/data_j.xls"
+    "tvdivq0000001vg2-att/data_j.xlsx"
 )
 JQUANTS_BASE  = "https://api.jquants.com/v1"
 JQUANTS_TOKEN = os.getenv("JQUANTS_REFRESH_TOKEN", "")
@@ -190,6 +190,10 @@ def fetch_all_shares(tickers: list[str]) -> dict[str, float | None]:
 def preprocess(ticker: str, df_raw: pd.DataFrame,
                shares: float | None) -> dict | None:
     df = df_raw.copy()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    df = df.loc[:, ~df.columns.duplicated(keep="first")]
+    df = df[~df.index.duplicated(keep="last")]
     df = df[df["Close"] > 0].dropna(subset=["Open", "High", "Low", "Close", "Volume"])
     if len(df) < MIN_HISTORY:
         return None

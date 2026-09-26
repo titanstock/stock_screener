@@ -1,0 +1,401 @@
+{
+  "date": "2026-08-07",
+  "strategies": {
+    "oversold_bounce": [
+      {
+        "code": "3299",
+        "name": "MUGEN ESTATE Co.,Ltd.",
+        "close": 1708.0,
+        "entry_price": 1708.0,
+        "stop_loss": 1593.4285714285713,
+        "take_profit": 1994.4285714285716,
+        "stop_capped": false,
+        "rsi": 29.03369170210381,
+        "rsi30": 39.29017311029867,
+        "macd": -0.8687748691272645,
+        "macd_signal": 29.140247724365828,
+        "macd_dir": "down"
+      },
+      {
+        "code": "3856",
+        "name": "Abalance Corporation",
+        "close": 341.0,
+        "entry_price": 341.0,
+        "stop_loss": 306.90000000000003,
+        "take_profit": 426.2499999999999,
+        "stop_capped": true,
+        "rsi": 27.57047098663267,
+        "rsi30": 33.52649305189449,
+        "macd": -42.388180475640524,
+        "macd_signal": -22.782524672920943,
+        "macd_dir": "down"
+      },
+      {
+        "code": "7271",
+        "name": "Yasunaga Corporation",
+        "close": 794.0,
+        "entry_price": 794.0,
+        "stop_loss": 714.6,
+        "take_profit": 992.5,
+        "stop_capped": true,
+        "rsi": 27.49135240044332,
+        "rsi30": 35.23112845965274,
+        "macd": -21.89389302515201,
+        "macd_signal": -17.034912531856634,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [
+      {
+        "code": "3719",
+        "name": "AI storm Co., Ltd.",
+        "close": 135.0,
+        "entry_price": 135.0,
+        "stop_loss": 121.85714285714286,
+        "take_profit": 161.28571428571428,
+        "stop_capped": false,
+        "rsi": 22.55378760875476,
+        "rsi30": 29.65654859282212,
+        "macd": -11.830040871988302,
+        "macd_signal": -10.870722108336112,
+        "macd_dir": "down"
+      },
+      {
+        "code": "5103",
+        "name": "Showa Holdings Co., Ltd.",
+        "close": 7.0,
+        "entry_price": 7.0,
+        "stop_loss": 6.3,
+        "take_profit": 8.4,
+        "stop_capped": true,
+        "rsi": 23.55413557325396,
+        "rsi30": 24.10517165011845,
+        "macd": -6.819094072094131,
+        "macd_signal": -6.778860922133795,
+        "macd_dir": "down"
+      },
+      {
+        "code": "9625",
+        "name": "Cerespo Co., Ltd.",
+        "close": 898.0,
+        "entry_price": 898.0,
+        "stop_loss": 834.4285714285714,
+        "take_profit": 1025.142857142857,
+        "stop_capped": false,
+        "rsi": 23.21951250636542,
+        "rsi30": 24.997129290289877,
+        "macd": -43.63416429642962,
+        "macd_signal": -20.088365233059744,
+        "macd_dir": "down"
+      }
+    ],
+    "minervini": []
+  },
+  "performance": [
+    {
+      "code": "5103",
+      "name": "Showa Holdings Co., Ltd.",
+      "entry_price": 7.0,
+      "stop_loss": 6.3,
+      "take_profit": 8.4,
+      "close_prev": 7.0,
+      "close_now": 7.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7271",
+      "name": "Yasunaga Corporation",
+      "entry_price": 794.0,
+      "stop_loss": 714.6,
+      "take_profit": 992.5,
+      "close_prev": 794.0,
+      "close_now": 794.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9625",
+      "name": "Cerespo Co., Ltd.",
+      "entry_price": 898.0,
+      "stop_loss": 834.4285714285714,
+      "take_profit": 1025.142857142857,
+      "close_prev": 898.0,
+      "close_now": 898.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "3856",
+      "name": "Abalance Corporation",
+      "entry_price": 341.0,
+      "stop_loss": 306.90000000000003,
+      "take_profit": 426.2499999999999,
+      "close_prev": 341.0,
+      "close_now": 341.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3719",
+      "name": "AI storm Co., Ltd.",
+      "entry_price": 135.0,
+      "stop_loss": 121.85714285714286,
+      "take_profit": 161.28571428571428,
+      "close_prev": 135.0,
+      "close_now": 135.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3299",
+      "name": "MUGEN ESTATE Co.,Ltd.",
+      "entry_price": 1708.0,
+      "stop_loss": 1593.4285714285713,
+      "take_profit": 1994.4285714285716,
+      "close_prev": 1708.0,
+      "close_now": 1708.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "8920",
+      "name": "Tosho Co., Ltd.",
+      "entry_price": 685.0,
+      "stop_loss": 642.0,
+      "take_profit": 792.5,
+      "close_prev": 685.0,
+      "close_now": 691.0,
+      "change_pct": 0.8759124087591241,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3418",
+      "name": "Balnibarbi Co.,Ltd.",
+      "entry_price": 1033.0,
+      "stop_loss": 1005.1799535479579,
+      "take_profit": 1088.6400929040842,
+      "close_prev": 1033.0,
+      "close_now": 1037.0,
+      "change_pct": 0.3872216844143272,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9158",
+      "name": "CUC Inc.",
+      "entry_price": 700.0,
+      "stop_loss": 633.8571428571429,
+      "take_profit": 865.3571428571428,
+      "close_prev": 700.0,
+      "close_now": 735.0,
+      "change_pct": 5.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "8783",
+      "name": "abc Co., Ltd.",
+      "entry_price": 57.0,
+      "stop_loss": 51.300000000000004,
+      "take_profit": 68.39999999999999,
+      "close_prev": 57.0,
+      "close_now": 59.0,
+      "change_pct": 3.508771929824561,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "4685",
+      "name": "Ryoyu Systems Co., Ltd.",
+      "entry_price": 2543.0,
+      "stop_loss": 2367.1428571428573,
+      "take_profit": 2982.642857142857,
+      "close_prev": 2543.0,
+      "close_now": 2623.0,
+      "change_pct": 3.1458906802988595,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3930",
+      "name": "Hatena Co., Ltd.",
+      "entry_price": 805.0,
+      "stop_loss": 724.5,
+      "take_profit": 1006.25,
+      "close_prev": 805.0,
+      "close_now": 731.0,
+      "change_pct": -9.192546583850932,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "4881",
+      "name": "FunPep Company Limited",
+      "entry_price": 46.0,
+      "stop_loss": 41.4,
+      "take_profit": 57.5,
+      "close_prev": 46.0,
+      "close_now": 49.0,
+      "change_pct": 6.521739130434782,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "5644",
+      "name": "5644.T",
+      "entry_price": 7120.0,
+      "stop_loss": 6960.0,
+      "take_profit": 7520.0,
+      "close_prev": 7120.0,
+      "close_now": 7210.0,
+      "change_pct": 1.2640449438202246,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7375",
+      "name": "7375.T",
+      "entry_price": 1051.0,
+      "stop_loss": 945.9,
+      "take_profit": 1313.75,
+      "close_prev": 1051.0,
+      "close_now": 1136.0,
+      "change_pct": 8.087535680304473,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6928",
+      "name": "6928.T",
+      "entry_price": 2174.0,
+      "stop_loss": 1956.6000000000001,
+      "take_profit": 2717.4999999999995,
+      "close_prev": 2174.0,
+      "close_now": 2567.0,
+      "change_pct": 18.077276908923643,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6840",
+      "name": "6840.T",
+      "entry_price": 560.0,
+      "stop_loss": 504.0,
+      "take_profit": 700.0,
+      "close_prev": 560.0,
+      "close_now": 767.0,
+      "change_pct": 36.964285714285715,
+      "hit_stop": false,
+      "hit_take": true,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6224",
+      "name": "JRC Co.,Ltd.",
+      "entry_price": 1119.0,
+      "stop_loss": 1033.0,
+      "take_profit": 1334.0,
+      "close_prev": 1119.0,
+      "close_now": 1108.0,
+      "change_pct": -0.9830205540661305,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6047",
+      "name": "Gunosy Inc.",
+      "entry_price": 353.0,
+      "stop_loss": 317.7,
+      "take_profit": 423.6,
+      "close_prev": 353.0,
+      "close_now": 365.0,
+      "change_pct": 3.39943342776204,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3776",
+      "name": "BroadBand Tower, Inc.",
+      "entry_price": 236.0,
+      "stop_loss": 212.4,
+      "take_profit": 295.0,
+      "close_prev": 236.0,
+      "close_now": 252.0,
+      "change_pct": 6.779661016949152,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    }
+  ]
+}

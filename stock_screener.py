@@ -5,7 +5,7 @@
 ================================
 対象市場  : スタンダード・グロース（内国株式）
 時価総額  : 500 億円以下
-戦略      : ②売られすぎ反発型 / NOA（ニッポン・オプティマライザー）
+戦略      : ミネルヴィニ SEPA型
 実行タイミング: 毎日 16:00（JST）自動実行 / --now オプションで即時実行
 """
 
@@ -34,8 +34,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 LINE_CHANNEL_ACCESS_TOKEN: str = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
-JQUANTS_REFRESH_TOKEN: str     = os.getenv("JQUANTS_REFRESH_TOKEN", "")
-JQUANTS_API_BASE: str          = "https://api.jquants.com/v1"
+JQUANTS_API_KEY: str           = os.getenv("JQUANTS_API_KEY", os.getenv("JQUANTS_REFRESH_TOKEN", ""))
+JQUANTS_API_BASE: str          = "https://api.jquants.com/v2"
 LINE_USER_ID: str              = os.getenv("LINE_USER_ID", "")
 LINE_PUSH_URL: str             = "https://api.line.me/v2/bot/message/push"
 DISCORD_WEBHOOK_URL: str       = os.getenv("DISCORD_WEBHOOK_URL", "")
@@ -60,34 +60,15 @@ MAX_WORKERS: int = 8
 
 # 戦略定義（表示ラベル）
 STRATEGIES: dict[str, str] = {
-    "oversold_bounce":    "売られすぎ反発型",
-    "noa":                "ニッポン・オプティマライザー（NOA）",
-    "minervini":          "ミネルヴィニ SEPA型",
+    "minervini": "ミネルヴィニ SEPA型",
 }
 
 # LINE/Discord 通知対象戦略
 NOTIFY_STRATEGIES: set[str] = {
-    "oversold_bounce",
-    "noa",
     "minervini",
 }
 
 
-# 売られすぎ反発型（件数型）専用パラメータ
-# 条件: RSI14≤30 + 出来高1.5倍 + ATR拡大
-# バックテスト実績: WR55.5% / PF1.62 / EV+2.5% / 9.88件/日（5年間）
-OVERSOLD_BOUNCE_RSI_HI: float  = 30.0   # RSI14 上限
-OVERSOLD_BOUNCE_VOL_MULT: float = 1.5   # 出来高 ≥ 20日平均の1.5倍
-OVERSOLD_BOUNCE_RR: float      = 2.5    # リスクリワード比
-
-
-# ニッポン・オプティマライザー（NOA）パラメータ
-# 条件: RSI(30)≤30 + MACDがシグナル以下（下向き局面）
-# バックテスト実績: WR57.2% / PF1.50 / EV+2.17% / 3.85件/日（5年間）
-NOA_RSI_PERIOD: int   = 30
-NOA_RSI_HI: float     = 30.0
-NOA_RR: float         = 2.0
-NOA_MAX_HOLD: int     = 10   # 最大保有日数（パフォーマンス追跡用）
 
 # ミネルヴィニ SEPA型パラメータ
 # 条件: パーフェクトオーダー + MA200上昇 + 52週安値+30% + 52週高値-25%以内 + ブレイクアウト + 出来高
@@ -111,7 +92,7 @@ POSITION_MAX_DAYS  = 20   # 最大保有営業日数（超過で期間終了ア�
 # JPX 上場銘柄一覧 URL
 JPX_LIST_URL = (
     "https://www.jpx.co.jp/markets/statistics-equities/misc/"
-    "tvdivq0000001vg2-att/data_j.xls"
+    "tvdivq0000001vg2-att/data_j.xlsx"
 )
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -194,77 +175,40 @@ def get_market_cap(stock: yf.Ticker) -> float:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# J-Quants API / データ取得
+# J-Quants API V2 / データ取得
 # ──────────────────────────────────────────────────────────────────────────────
-_jq_id_token: str   = ""
-_jq_token_expiry: float = 0.0
-_jq_token_lock  = threading.Lock()
-_JQ_TOKEN_CACHE = Path(__file__).parent / ".jq_token_cache.json"
-
-
-def _get_jquants_id_token() -> str:
-    """IDトークンを取得（23時間キャッシュ・ファイル永続化）"""
-    global _jq_id_token, _jq_token_expiry
-    with _jq_token_lock:
-        # メモリキャッシュが有効なら即返す
-        if _jq_id_token and time.time() < _jq_token_expiry:
-            return _jq_id_token
-        # ファイルキャッシュを確認
-        try:
-            cache = json.loads(_JQ_TOKEN_CACHE.read_text())
-            if cache.get("token") and time.time() < cache.get("expiry", 0):
-                _jq_id_token    = cache["token"]
-                _jq_token_expiry = cache["expiry"]
-                logger.debug("J-Quants IDトークン: ファイルキャッシュから再利用")
-                return _jq_id_token
-        except Exception:
-            pass
-        # 新規取得
-        resp = requests.post(
-            f"{JQUANTS_API_BASE}/token/auth_refresh",
-            params={"refreshtoken": JQUANTS_REFRESH_TOKEN},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        _jq_id_token    = resp.json()["idToken"]
-        _jq_token_expiry = time.time() + 23 * 3600
-        # ファイルに保存
-        try:
-            _JQ_TOKEN_CACHE.write_text(
-                json.dumps({"token": _jq_id_token, "expiry": _jq_token_expiry})
-            )
-        except Exception as e:
-            logger.warning(f"J-Quants トークンキャッシュ保存失敗: {e}")
-        logger.debug("J-Quants IDトークン: 新規取得")
-        return _jq_id_token
+def _jq_headers() -> dict:
+    return {"x-api-key": JQUANTS_API_KEY}
 
 
 def _fetch_history_jquants(code4: str, days: int = 400) -> pd.DataFrame | None:
-    """J-Quants APIから調整済みOHLCVを取得してyfinance互換DataFrameを返す"""
+    """J-Quants V2 APIから調整済みOHLCVを取得してyfinance互換DataFrameを返す。
+    無料プランは直近2年分のみ対応（フォールバック用）。"""
+    if not JQUANTS_API_KEY:
+        return None
     try:
-        id_token  = _get_jquants_id_token()
-        from_date = (datetime.now() - timedelta(days=days)).strftime("%Y%m%d")
-        to_date   = datetime.now().strftime("%Y%m%d")
+        from_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        to_date   = datetime.now().strftime("%Y-%m-%d")
         resp = requests.get(
-            f"{JQUANTS_API_BASE}/prices/daily_quotes",
+            f"{JQUANTS_API_BASE}/equities/bars/daily",
             params={"code": code4, "from": from_date, "to": to_date},
-            headers={"Authorization": f"Bearer {id_token}"},
+            headers=_jq_headers(),
             timeout=15,
         )
         if resp.status_code != 200:
             return None
-        records = resp.json().get("daily_quotes", [])
+        records = resp.json().get("data", [])
         if not records:
             return None
         df = pd.DataFrame(records)
         df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize("Asia/Tokyo")
         df = df.set_index("Date").sort_index()
         df = df.rename(columns={
-            "AdjustmentOpen":   "Open",
-            "AdjustmentHigh":   "High",
-            "AdjustmentLow":    "Low",
-            "AdjustmentClose":  "Close",
-            "AdjustmentVolume": "Volume",
+            "AdjO": "Open",
+            "AdjH": "High",
+            "AdjL": "Low",
+            "AdjC": "Close",
+            "AdjVo": "Volume",
         })
         df = df[["Open", "High", "Low", "Close", "Volume"]].astype(float)
         return df
@@ -518,9 +462,9 @@ def evaluate_strategies(
 # ──────────────────────────────────────────────────────────────────────────────
 def screen_ticker(ticker: str) -> dict[str, dict] | None:
     """
-    データを 1 回取得して 4 戦略すべてをチェック。
-    マッチした戦略のみ {strategy_key: result_dict} で返す。
-    何もマッチしなければ None。
+    データを 1 回取得してミネルヴィニ SEPA型をチェック。
+    マッチした場合のみ {strategy_key: result_dict} で返す。
+    マッチしなければ None。
     """
     try:
         stock = yf.Ticker(ticker)
@@ -528,10 +472,8 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         market_cap = get_market_cap(stock)
         if market_cap <= 0:
             return None
-        # 既存戦略は500億以下、ミネルヴィニは500〜5000億を対象
-        in_small   = market_cap <= MAX_MARKET_CAP_YEN
-        in_minerv  = MINERVINI_MIN_CAP <= market_cap <= MINERVINI_MAX_CAP
-        if not in_small and not in_minerv:
+        in_minerv = MINERVINI_MIN_CAP <= market_cap <= MINERVINI_MAX_CAP
+        if not in_minerv:
             return None
 
         df = fetch_history(ticker, days=500)
@@ -562,7 +504,7 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         avg_vol_20   = float(df["Volume"].iloc[-n:-1].mean())
         past_high_20 = float(df["High"].iloc[-n:-1].max())
 
-        # ── 流動性フィルター（全型共通）：平均出来高 OR 平均売買代金 ──
+        # ── 流動性フィルター ──
         avg_turnover_20 = float((df["Close"].iloc[-n:-1] * df["Volume"].iloc[-n:-1]).mean())
         if avg_turnover_20 < MIN_AVG_TURNOVER:
             return None
@@ -575,8 +517,6 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         if pd.isna(rsi):
             return None
 
-        rsi30 = float(calc_rsi(df["Close"], period=NOA_RSI_PERIOD).iloc[-1])
-
         macd_s, sig_s = calc_macd(df["Close"])
         macd_now = float(macd_s.iloc[-1])
         sig_now  = float(sig_s.iloc[-1])
@@ -587,27 +527,6 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         breakout_pct = (close - past_high_20) / past_high_20 * 100 if past_high_20 > 0 else 0.0
         change_pct   = (close - prev_close)   / prev_close   * 100 if prev_close   > 0 else 0.0
 
-        # ── 新戦略用追加計算 ──
-        open_now = float(df["Open"].iloc[-1])
-        high_now = float(df["High"].iloc[-1])
-        low_now  = float(df["Low"].iloc[-1])
-
-        # 連続陰線カウント（当日含む）
-        consec_bear_count = 0
-        for _i in range(-1, -len(df)-1, -1):
-            if float(df["Close"].iloc[_i]) < float(df["Open"].iloc[_i]):
-                consec_bear_count += 1
-            else:
-                break
-
-        # 下ヒゲ比率
-        _range = high_now - low_now
-        _lower_shadow = min(open_now, close) - low_now
-        lower_shadow_pct = (_lower_shadow / _range * 100) if _range > 0 else 0.0
-
-        # MA25乖離率
-        ma25_dev_pct = ((close - ma25_daily) / ma25_daily * 100) if ma25_daily > 0 else 0.0
-
         # ── ミネルヴィニ用 MA50/150/200 計算 ──
         ma50  = float(df["Close"].rolling(50).mean().iloc[-1])
         ma150 = float(df["Close"].rolling(150).mean().iloc[-1])
@@ -617,22 +536,6 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         wk52_lo = float(df["Low"].iloc[-252:].min())
         wk52_hi = float(df["High"].iloc[-252:].max())
         minerv_breakout_hi = float(df["High"].iloc[-MINERVINI_BREAKOUT_DAYS - 1:-1].max())
-
-        matched_keys = evaluate_strategies(
-            df          = df,
-            close       = close,
-            prev_close  = prev_close,
-            ma25_daily  = ma25_daily,
-            ma25_weekly = ma25_weekly,
-            avg_vol_20  = avg_vol_20,
-            vol_now     = vol_now,
-            past_high_20= past_high_20,
-            rsi         = rsi,
-            macd_now    = macd_now,
-            sig_now     = sig_now,
-            breakout_pct= breakout_pct,
-            change_pct  = change_pct,
-        )
 
         base = {
             "code":               ticker.replace(".T", ""),
@@ -652,31 +555,9 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
             "past_high_20":       past_high_20,
             "breakout_pct":       breakout_pct,
             "change_pct":         change_pct,
-            "consec_bear_count":  consec_bear_count,
-            "lower_shadow_pct":   lower_shadow_pct,
-            "ma25_dev_pct":       ma25_dev_pct,
-            "rsi30":              rsi30,
         }
 
-        matched: dict[str, dict] = {sk: base.copy() for sk in matched_keys}
-
-        # ── 売られすぎ反発型（件数型）: RSI14≤30 + 出来高1.5倍 + ATR拡大 ──
-        if in_small:
-            atr3d_now  = float(df["ATR"].iloc[-3:].mean())
-            atr3d_prev = float(df["ATR"].iloc[-6:-3].mean())
-            atr_expand = (
-                not pd.isna(atr3d_now) and not pd.isna(atr3d_prev)
-                and atr3d_prev > 0 and atr3d_now > atr3d_prev
-            )
-            if rsi <= OVERSOLD_BOUNCE_RSI_HI and vol_20x >= OVERSOLD_BOUNCE_VOL_MULT and atr_expand:
-                matched["oversold_bounce"] = base.copy()
-
-        # ── ニッポン・オプティマライザー（NOA）: RSI(30)≤30 + MACD下向き ──
-        if (in_small
-                and not pd.isna(rsi30)
-                and rsi30 <= NOA_RSI_HI
-                and macd_now < sig_now):
-            matched["noa"] = base.copy()
+        matched: dict[str, dict] = {}
 
         # ── ミネルヴィニ SEPA型: パーフェクトオーダー + ブレイクアウト ──
         if (in_minerv
@@ -706,36 +587,17 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
         if not matched:
             return None
 
-        # ── 戦略ごとの買値目安・損切り・利確を付与 ──
-        entry_prices = {
-            "oversold_bounce":    close,
-            "noa":                close,
-        }
-        rr_ratio = {
-            "oversold_bounce":    OVERSOLD_BOUNCE_RR,
-            "noa":                NOA_RR,
-        }
-        for sk in list(matched.keys()):
-            if sk == "minervini":
-                # 損切り = 収縮フェーズ(直近20日)の最安値の1%下、最大-15%でキャップ
-                entry       = close
-                consol_lo   = float(df["Low"].iloc[-20:-1].min())
-                stop        = consol_lo * 0.99
-                stop        = max(stop, entry * (1 - MINERVINI_STOP_PCT * 1.5))  # 最大-15%
-                matched[sk]["entry_price"]  = entry
-                matched[sk]["stop_loss"]    = stop
-                matched[sk]["stop_capped"]  = stop == entry * (1 - MINERVINI_STOP_PCT * 1.5)
-                matched[sk]["take_profit"]  = None  # トレーリングストップで管理
-                continue
-            entry     = entry_prices[sk]
-            stop_atr  = entry - atr * 2.0
-            stop_cap  = entry * 0.90          # 上限: -10%
-            stop      = max(stop_atr, stop_cap)
-            take      = entry + (entry - stop) * rr_ratio[sk]
-            matched[sk]["entry_price"]  = entry
-            matched[sk]["stop_loss"]    = stop
-            matched[sk]["stop_capped"]  = stop > stop_atr   # 上限適用フラグ
-            matched[sk]["take_profit"]  = take
+        # ── 損切り・利確を付与 ──
+        if "minervini" in matched:
+            # 損切り = 収縮フェーズ(直近20日)の最安値の1%下、最大-15%でキャップ
+            entry     = close
+            consol_lo = float(df["Low"].iloc[-20:-1].min())
+            stop      = consol_lo * 0.99
+            stop      = max(stop, entry * (1 - MINERVINI_STOP_PCT * 1.5))  # 最大-15%
+            matched["minervini"]["entry_price"] = entry
+            matched["minervini"]["stop_loss"]   = stop
+            matched["minervini"]["stop_capped"] = stop == entry * (1 - MINERVINI_STOP_PCT * 1.5)
+            matched["minervini"]["take_profit"] = None  # トレーリングストップで管理
 
         # 銘柄名はマッチした場合のみ取得
         try:
@@ -839,12 +701,7 @@ def build_message(
     )
 
     # ── 詳細ブロックの並び順 ──
-    if strategy_key == "breakout":
-        results = sorted(results, key=lambda r: r["vol_20x"], reverse=True)
-    elif strategy_key == "oversold_bounce":
-        results = sorted(results, key=lambda r: r["change_pct"], reverse=True)
-    else:
-        results = sorted(results, key=lambda r: r["rsi"], reverse=True)
+    results = sorted(results, key=lambda r: r["rsi"], reverse=True)
 
     detail_header = f"\n{'─' * 24}\n【詳細】" if ranking_block else ""
     lines = (
@@ -865,45 +722,7 @@ def build_message(
         shinyo = (shinyo_map or {}).get(r["code"])
         shinyo_lines = _fmt_shinyo_block(shinyo)
 
-        if strategy_key == "breakout":
-            lines += [
-                f"  20日高値  : {r['past_high_20']:>8,.0f} 円  突破 +{r['breakout_pct']:.2f}%",
-                f"  前日比    : {r['change_pct']:>+7.2f}%",
-                f"  出来高20比: {r['vol_20x']:.2f} 倍",
-                f"  日足MA25  : {r['ma25_daily']:>8,.1f}",
-                f"  週足MA25  : {_fmt_wma(r['ma25_weekly']):>8}",
-                f"  [参考] RSI     : {r['rsi']:.1f}",
-                f"  [参考] MACD    : {macd_str}",
-                f"  [参考] 出来高前比: {vol_prev}",
-                f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
-                f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
-                f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
-                f"  リスクリワード: 1:2",
-            ] + shinyo_lines
-        elif strategy_key == "oversold_bounce":
-            lines += [
-                f"  RSI(14)   : {r['rsi']:.1f}",
-                f"  出来高20比: {r['vol_20x']:.2f} 倍",
-                f"  前日比    : {r['change_pct']:>+7.2f}%",
-                f"  日足MA25  : {r['ma25_daily']:>8,.1f}",
-                f"  [参考] ATR: {r['atr']:.1f}",
-                f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
-                f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
-                f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
-                f"  リスクリワード: 1:{OVERSOLD_BOUNCE_RR}",
-            ] + shinyo_lines
-        elif strategy_key == "noa":
-            lines += [
-                f"  RSI(30)   : {r.get('rsi30', float('nan')):.1f}",
-                f"  MACD      : {r['macd']:.3f}（シグナル: {r['macd_signal']:.3f}）",
-                f"  前日比    : {r['change_pct']:>+7.2f}%",
-                f"  日足MA25  : {r['ma25_daily']:>8,.1f}",
-                f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
-                f"  損切り    : {r['stop_loss']:>8,.0f} 円（ATR×2.0 / {(r['stop_loss']-r['entry_price'])/r['entry_price']*100:.1f}%）",
-                f"  利確目安  : {r['take_profit']:>8,.0f} 円（{(r['take_profit']-r['entry_price'])/r['entry_price']*100:+.1f}%）",
-                f"  リスクリワード: 1:{NOA_RR}",
-            ] + shinyo_lines
-        elif strategy_key == "minervini":
+        if strategy_key == "minervini":
             stop_pct_actual = (r['stop_loss'] - r['entry_price']) / r['entry_price'] * 100
             lines += [
                 f"  ブレイクアウト: {r['breakout_pct']:>+.2f}%（20日高値比）",
@@ -939,7 +758,6 @@ def save_results(all_results: dict[str, list[dict]], run_date: date) -> None:
                 "take_profit":  r["take_profit"],
                 "stop_capped":  r["stop_capped"],
                 "rsi":          r["rsi"],
-                "rsi30":        r.get("rsi30"),
                 "macd":         r["macd"],
                 "macd_signal":  r["macd_signal"],
                 "macd_dir":     r["macd_dir"],
@@ -1287,12 +1105,8 @@ def fetch_shinyo_batch(codes: list[str], **_) -> dict[str, dict | None]:
 
 _MEDALS = ["🥇", "🥈", "🥉"]
 
-# 戦略ごとのスコア定義
-_SCORE_RULES: dict[str, list[tuple]] = {
-    # (条件関数, 点数, 説明)
-    "oversold_bounce":    [],   # スコアなし
-    "noa":                [],   # スコアなし
-}
+# 戦略ごとのスコア定義（条件関数, 点数, 説明）
+_SCORE_RULES: dict[str, list[tuple]] = {}
 
 
 def calc_score(strategy_key: str, result: dict, shinyo: dict | None) -> int:
@@ -1436,8 +1250,7 @@ def add_position(
                     stop_atr = entry_price - atr * 2.0
                     stop = max(stop_atr, entry_price * 0.90)
                 if take is None:
-                    rr_map = {"oversold_bounce": OVERSOLD_BOUNCE_RR, "noa": NOA_RR}
-                    rr  = rr_map.get(strategy_type, 1.5)
+                    rr = 1.5
                     take = entry_price + (entry_price - stop) * rr
 
     portfolio = load_portfolio()
@@ -1763,10 +1576,10 @@ if __name__ == "__main__":
         entry = _arg("--entry")
         stype = _arg("--type")
         if not code or not entry or not stype:
-            print("使い方: --add-position --code CODE --entry PRICE --type {oversold_bounce|noa} [--stop STOP] [--take TAKE]")
+            print("使い方: --add-position --code CODE --entry PRICE --type minervini [--stop STOP] [--take TAKE]")
             sys.exit(1)
-        if stype not in ("oversold_bounce", "noa"):
-            print(f"--type は oversold_bounce / noa のいずれかを指定してください。")
+        if stype not in ("minervini",):
+            print("--type は minervini を指定してください。")
             sys.exit(1)
         stop_val = _arg("--stop")
         take_val = _arg("--take")

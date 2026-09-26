@@ -279,6 +279,11 @@ def main():
     with open(CACHE_PATH, "rb") as f:
         cache = pickle.load(f)
     all_data: dict = cache["data"]
+    for k, df in all_data.items():
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        if df.columns.duplicated().any():
+            all_data[k] = df.loc[:, ~df.columns.duplicated(keep="first")]
     trading_days   = len(next(iter(all_data.values())))
     print(f"銘柄数: {len(all_data)}  取引日数: {trading_days}日  データ期間〜{cache['date']}")
     run_grid(all_data, trading_days)

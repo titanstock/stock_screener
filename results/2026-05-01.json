@@ -1,0 +1,179 @@
+{
+  "date": "2026-05-01",
+  "strategies": {
+    "oversold_bounce": [],
+    "noa": [],
+    "minervini": []
+  },
+  "performance": [
+    {
+      "code": "4439",
+      "name": "Toumei Co.,Ltd.",
+      "entry_price": 819.0,
+      "stop_loss": 762.2857142857143,
+      "take_profit": 960.7857142857142,
+      "close_prev": 819.0,
+      "close_now": 715.0,
+      "change_pct": -12.698412698412698,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 465.0,
+      "stop_loss": 418.5,
+      "take_profit": 581.25,
+      "close_prev": 465.0,
+      "close_now": 428.0,
+      "change_pct": -7.956989247311828,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9168",
+      "name": "Rise Consulting Group, Inc.",
+      "entry_price": 404.0,
+      "stop_loss": 366.42857142857144,
+      "take_profit": 497.9285714285714,
+      "close_prev": 404.0,
+      "close_now": 416.0,
+      "change_pct": 2.9702970297029703,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1297.0,
+      "stop_loss": 1167.3,
+      "take_profit": 1621.25,
+      "close_prev": 1297.0,
+      "close_now": 1232.0,
+      "change_pct": -5.0115651503469545,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "4316",
+      "name": "BeMap, Inc.",
+      "entry_price": 206.0,
+      "stop_loss": 185.4,
+      "take_profit": 247.2,
+      "close_prev": 206.0,
+      "close_now": 173.0,
+      "change_pct": -16.019417475728158,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3185",
+      "name": "Dream Vision Co.,Ltd.",
+      "entry_price": 178.0,
+      "stop_loss": 160.20000000000002,
+      "take_profit": 222.49999999999994,
+      "close_prev": 178.0,
+      "close_now": 207.0,
+      "change_pct": 16.292134831460675,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2901",
+      "name": "Wel-Dish.Incorporated",
+      "entry_price": 219.0,
+      "stop_loss": 197.1,
+      "take_profit": 273.75,
+      "close_prev": 219.0,
+      "close_now": 191.0,
+      "change_pct": -12.785388127853881,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "7709",
+      "name": "KUBOTEK Corporation",
+      "entry_price": 97.0,
+      "stop_loss": 87.3,
+      "take_profit": 116.4,
+      "close_prev": 97.0,
+      "close_now": 94.0,
+      "change_pct": -3.0927835051546393,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "265A",
+      "name": "HMCOMM INC",
+      "entry_price": 669.0,
+      "stop_loss": 602.1,
+      "take_profit": 836.25,
+      "close_prev": 669.0,
+      "close_now": 664.0,
+      "change_pct": -0.7473841554559043,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "4932",
+      "name": "Almado, Inc.",
+      "entry_price": 759.0,
+      "stop_loss": 723.0881168967279,
+      "take_profit": 848.7797077581802,
+      "close_prev": 759.0,
+      "close_now": 709.0,
+      "change_pct": -6.587615283267458,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "8105",
+      "name": "Bitcoin Japan Corporation",
+      "entry_price": 121.0,
+      "stop_loss": 108.9,
+      "take_profit": 151.25,
+      "close_prev": 121.0,
+      "close_now": 132.0,
+      "change_pct": 9.090909090909092,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    }
+  ]
+}

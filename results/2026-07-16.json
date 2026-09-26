@@ -1,0 +1,277 @@
+{
+  "date": "2026-07-16",
+  "strategies": {
+    "oversold_bounce": [
+      {
+        "code": "3791",
+        "name": "IG Port, Inc.",
+        "close": 1026.0,
+        "entry_price": 1026.0,
+        "stop_loss": 923.4,
+        "take_profit": 1282.5,
+        "stop_capped": true,
+        "rsi": 25.63756976224265,
+        "rsi30": 35.9315667978108,
+        "macd": -6.147060404703552,
+        "macd_signal": 14.989411310881804,
+        "macd_dir": "down"
+      },
+      {
+        "code": "414A",
+        "name": "OVERLAP HOLDINGS INC",
+        "close": 801.0,
+        "entry_price": 801.0,
+        "stop_loss": 746.0,
+        "take_profit": 938.5,
+        "stop_capped": false,
+        "rsi": 22.286022773358596,
+        "rsi30": 32.75931345453104,
+        "macd": -6.602388381695505,
+        "macd_signal": -1.1367310002049413,
+        "macd_dir": "down"
+      },
+      {
+        "code": "6047",
+        "name": "Gunosy Inc.",
+        "close": 388.0,
+        "entry_price": 388.0,
+        "stop_loss": 355.2857142857143,
+        "take_profit": 469.78571428571433,
+        "stop_capped": false,
+        "rsi": 24.458328950908978,
+        "rsi30": 32.32696189117186,
+        "macd": -4.265449554930797,
+        "macd_signal": -2.6609186714595845,
+        "macd_dir": "down"
+      },
+      {
+        "code": "6380",
+        "name": "Oriental Chain Mfg. Co., Ltd.",
+        "close": 3905.0,
+        "entry_price": 3905.0,
+        "stop_loss": 3540.714285714286,
+        "take_profit": 4815.714285714285,
+        "stop_capped": false,
+        "rsi": 23.55454395749483,
+        "rsi30": 37.14366921703613,
+        "macd": -202.98270795344888,
+        "macd_signal": -123.87387424150259,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [],
+    "minervini": []
+  },
+  "performance": [
+    {
+      "code": "414A",
+      "name": "OVERLAP HOLDINGS INC",
+      "entry_price": 801.0,
+      "stop_loss": 746.0,
+      "take_profit": 938.5,
+      "close_prev": 801.0,
+      "close_now": 809.0,
+      "change_pct": 0.9987515605493134,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6380",
+      "name": "Oriental Chain Mfg. Co., Ltd.",
+      "entry_price": 3905.0,
+      "stop_loss": 3540.714285714286,
+      "take_profit": 4815.714285714285,
+      "close_prev": 3905.0,
+      "close_now": 3955.0,
+      "change_pct": 1.2804097311139564,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6047",
+      "name": "Gunosy Inc.",
+      "entry_price": 388.0,
+      "stop_loss": 355.2857142857143,
+      "take_profit": 469.78571428571433,
+      "close_prev": 388.0,
+      "close_now": 350.0,
+      "change_pct": -9.793814432989691,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3791",
+      "name": "IG Port, Inc.",
+      "entry_price": 1026.0,
+      "stop_loss": 923.4,
+      "take_profit": 1282.5,
+      "close_prev": 1026.0,
+      "close_now": 962.0,
+      "change_pct": -6.237816764132553,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "7373.T",
+      "entry_price": 1001.0,
+      "stop_loss": 903.7142857142857,
+      "take_profit": 1244.2142857142858,
+      "close_prev": 1001.0,
+      "close_now": 1018.0,
+      "change_pct": 1.6983016983016983,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "319A",
+      "name": "NEXT GENERATION TECHNOLOGY GROU",
+      "entry_price": 19540.0,
+      "stop_loss": 16609.0,
+      "take_profit": null,
+      "close_prev": 19540.0,
+      "close_now": 17680.0,
+      "change_pct": -9.518935516888433,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "2705",
+      "name": "OOTOYA Holdings Co., Ltd.",
+      "entry_price": 8280.0,
+      "stop_loss": 7038.0,
+      "take_profit": null,
+      "close_prev": 8280.0,
+      "close_now": 8050.0,
+      "change_pct": -2.7777777777777777,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "9270",
+      "name": "Valuence Holdings Inc.",
+      "entry_price": 1972.0,
+      "stop_loss": 1774.8,
+      "take_profit": 2465.0,
+      "close_prev": 1972.0,
+      "close_now": 2038.0,
+      "change_pct": 3.3468559837728193,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2970",
+      "name": "Glc Group,Inc.",
+      "entry_price": 927.0,
+      "stop_loss": 854.1428571428571,
+      "take_profit": 1109.1428571428573,
+      "close_prev": 927.0,
+      "close_now": 917.0,
+      "change_pct": -1.0787486515641855,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "6156",
+      "name": "A-One Seimitsu Inc.",
+      "entry_price": 1742.0,
+      "stop_loss": 1661.770167608446,
+      "take_profit": 1942.574580978885,
+      "close_prev": 1742.0,
+      "close_now": 1751.0,
+      "change_pct": 0.5166475315729048,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3242",
+      "name": "Urbanet Corporation Co.,Ltd.",
+      "entry_price": 487.0,
+      "stop_loss": 475.21374402240315,
+      "take_profit": 516.4656399439921,
+      "close_prev": 487.0,
+      "close_now": 488.0,
+      "change_pct": 0.20533880903490762,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2805",
+      "name": "S&B Foods Inc.",
+      "entry_price": 5730.0,
+      "stop_loss": 4875.75,
+      "take_profit": null,
+      "close_prev": 5730.0,
+      "close_now": 5980.0,
+      "change_pct": 4.363001745200698,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "7806",
+      "name": "MTG Co., Ltd.",
+      "entry_price": 8100.0,
+      "stop_loss": 6885.0,
+      "take_profit": null,
+      "close_prev": 8100.0,
+      "close_now": 7460.0,
+      "change_pct": -7.901234567901234,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "6824",
+      "name": "New Cosmos Electric Co.,Ltd.",
+      "entry_price": 5790.0,
+      "stop_loss": 4921.5,
+      "take_profit": null,
+      "close_prev": 5790.0,
+      "close_now": 4765.0,
+      "change_pct": -17.70293609671848,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    }
+  ]
+}

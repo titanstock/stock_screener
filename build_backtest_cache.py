@@ -31,16 +31,17 @@ from dotenv import load_dotenv
 warnings.filterwarnings("ignore")
 load_dotenv()
 
-CACHE_PATH      = Path(__file__).parent / "backtest_cache.pkl"
-MAX_MARKET_CAP  = 500 * 10**8        # 500億円
+CACHE_PATH      = Path(__file__).parent / "backtest_midcap_5y_cache.pkl"
+MIN_MARKET_CAP  = 500 * 10**8        # 500億円
+MAX_MARKET_CAP  = 5000 * 10**8       # 5000億円
 MIN_ROWS        = 100                 # 最低日数
-PERIOD          = "2y"
+PERIOD          = "5y"
 BATCH_SIZE      = 100                 # yfinance一括取得のバッチサイズ
 MAX_WORKERS     = 30                  # 時価総額取得の並列数
 
 JPX_LIST_URL = (
     "https://www.jpx.co.jp/markets/statistics-equities/misc/"
-    "tvdivq0000001vg2-att/data_j.xls"
+    "tvdivq0000001vg2-att/data_j.xlsx"
 )
 
 
@@ -152,15 +153,21 @@ def main():
     print(f"時価総額取得完了: {len(market_caps)}銘柄")
 
     # ── Step 4: 時価総額フィルタリング ──
-    print(f"\nフィルタリング（≤{cap_oku:.0f}億円）...")
+    min_cap = MIN_MARKET_CAP if "MIN_MARKET_CAP" in globals() else 0
+    min_oku = min_cap / 10**8
+    print(f"\nフィルタリング（{min_oku:.0f}億〜{cap_oku:.0f}億円）...")
     filtered = {}
-    no_cap   = 0
-    too_big  = 0
+    no_cap    = 0
+    too_small = 0
+    too_big   = 0
 
     for t, df in ohlcv_data.items():
         mc = market_caps.get(t, 0.0)
         if mc <= 0:
             no_cap += 1
+            continue
+        if mc < min_cap:
+            too_small += 1
             continue
         if mc > MAX_MARKET_CAP:
             too_big += 1
@@ -168,6 +175,8 @@ def main():
         filtered[t] = df
 
     print(f"  対象外（時価総額取得不可）: {no_cap}銘柄")
+    if too_small:
+        print(f"  対象外（{min_oku:.0f}億円未満）: {too_small}銘柄")
     print(f"  対象外（{cap_oku:.0f}億円超）: {too_big}銘柄")
     print(f"  フィルター後              : {len(filtered)}銘柄")
 

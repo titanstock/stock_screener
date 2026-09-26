@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-14",
+  "strategies": {
+    "minervini": []
+  },
+  "performance": [
+    {
+      "code": "3399",
+      "name": "Maruchiyo Yamaokaya Corporation",
+      "entry_price": 4050.0,
+      "stop_loss": 3442.5,
+      "take_profit": null,
+      "close_prev": 4050.0,
+      "close_now": 3670.0,
+      "change_pct": -9.382716049382717,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    },
+    {
+      "code": "278A",
+      "name": "Terra Drone Corporation",
+      "entry_price": 17050.0,
+      "stop_loss": 14492.5,
+      "take_profit": null,
+      "close_prev": 17050.0,
+      "close_now": 18980.0,
+      "change_pct": 11.319648093841641,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ミネルヴィニ SEPA型"
+      ]
+    }
+  ]
+}

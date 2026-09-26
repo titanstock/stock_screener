@@ -16,7 +16,7 @@
   RR=2.0 / 最大保有20日
 """
 
-import itertools, pickle, warnings
+import itertools, pickle, sys, warnings
 from pathlib import Path
 from collections import defaultdict
 
@@ -25,7 +25,8 @@ import pandas as pd
 
 warnings.filterwarnings("ignore")
 
-CACHE_PATH    = Path(__file__).parent / "backtest_cache.pkl"
+_cache_name = sys.argv[1] if len(sys.argv) > 1 else "backtest_cache.pkl"
+CACHE_PATH    = Path(__file__).parent / _cache_name
 MIN_HISTORY   = 100
 MIN_TURNOVER  = 30_000_000
 STOP_CAP_PCT  = 0.10
@@ -40,7 +41,7 @@ VOL_MULT_LIST   = [1.5, 2.0, 2.5, 3.0]
 CLOSE_PCT_LIST  = [0.0, 0.3, 0.5]   # 0=条件なし
 
 # 合格基準
-OK_WR_YEAR  = 55.0   # 各年の最低WR
+OK_PF_YEAR  = 1.0    # 各年の最低PF
 OK_COUNT    = 0.3    # 件/日（全体）
 
 
@@ -141,18 +142,27 @@ def _backtest_one(df: pd.DataFrame, sig_idx: np.ndarray) -> list[tuple]:
     return results
 
 
+def _pf(rets: np.ndarray) -> float | None:
+    if len(rets) < 5:
+        return None
+    wins   = rets[rets > 0].sum()
+    losses = -rets[rets < 0].sum()
+    return wins / losses if losses > 0 else (float("inf") if wins > 0 else None)
+
+
 def run_grid(all_data: dict, trading_days: int):
     combos = list(itertools.product(RSI_HI_LIST, VOL_MULT_LIST, CLOSE_PCT_LIST))
+    YEARS  = [2022, 2023, 2024, 2025, 2026]
 
     print(f"\n売られすぎ反発型 グリッドサーチ  RR={RR}  最大保有={MAX_HOLD}日")
-    print(f"合格基準: 全年WR≥{OK_WR_YEAR}% / 件数≥{OK_COUNT}件/日")
+    print(f"合格基準: 全年PF≥{OK_PF_YEAR} / 件数≥{OK_COUNT}件/日")
     print(f"グリッド: {len(combos)}通り\n")
 
     hdr = (f"  {'RSI':>4} {'Vol':>4} {'値位':>4} │ "
-           f"{'2023':>6} {'2024':>6} {'2025':>6} {'2026':>6} │ "
-           f"{'全体':>6}  {'件/日':>5}  {'判定':>4}")
+           f"{'2022':>6} {'2023':>6} {'2024':>6} {'2025':>6} {'2026':>5} │ "
+           f"{'全体PF':>7}  {'件/日':>5}  {'判定':>4}")
     print(hdr)
-    print("  " + "─" * 82)
+    print("  " + "─" * 94)
 
     passed = []
 
@@ -161,6 +171,10 @@ def run_grid(all_data: dict, trading_days: int):
         filled = 0
 
         for ticker, df in all_data.items():
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            if df.columns.duplicated().any():
+                df = df.loc[:, ~df.columns.duplicated(keep="first")]
             sig_idx = _signals(df, rsi_hi, vol_mult, cp_min)
             if len(sig_idx) == 0:
                 continue
@@ -172,52 +186,50 @@ def run_grid(all_data: dict, trading_days: int):
         if filled < 5:
             continue
 
-        # 年別WR
-        year_wr = {}
-        for yr in [2023, 2024, 2025, 2026]:
-            r = np.array(year_rets.get(yr, []))
-            year_wr[yr] = len(r[r > 0]) / len(r) * 100 if len(r) >= 5 else None
+        year_pf = {yr: _pf(np.array(year_rets.get(yr, []))) for yr in YEARS}
 
-        # 全体WR
         all_rets = np.array([r for rs in year_rets.values() for r in rs])
-        wins = all_rets[all_rets > 0]
-        total_wr = len(wins) / len(all_rets) * 100 if len(all_rets) > 0 else 0
+        total_pf = _pf(all_rets)
         spd = filled / trading_days
 
-        # 判定：2023/2024/2025 すべてWR≥55% かつ 件数OK
-        ok_years = all(year_wr.get(yr) is not None and year_wr[yr] >= OK_WR_YEAR
-                       for yr in [2023, 2024, 2025])
+        eval_yrs = [2022, 2023, 2024, 2025]
+        ok_years = all(year_pf.get(yr) is not None and year_pf[yr] >= OK_PF_YEAR
+                       for yr in eval_yrs)
         ok_count = spd >= OK_COUNT
         mark = "✅" if ok_years and ok_count else "  "
 
-        def fmt_wr(wr):
-            if wr is None: return "  N/A "
-            flag = "⚠" if wr < OK_WR_YEAR else " "
-            return f"{wr:5.1f}%{flag}"
+        def fmt_pf(pf):
+            if pf is None: return "  N/A"
+            if pf == float("inf"): return "  ∞  "
+            flag = "⚠" if pf < OK_PF_YEAR else " "
+            return f"{pf:5.2f}{flag}"
 
         cp_label = f"{cp_min:.1f}" if cp_min > 0 else " off"
+        total_str = f"{total_pf:.2f}" if total_pf is not None else " N/A"
         print(f"  {rsi_hi:>4} {vol_mult:>4.1f} {cp_label:>4} │ "
-              f"{fmt_wr(year_wr.get(2023))} {fmt_wr(year_wr.get(2024))} "
-              f"{fmt_wr(year_wr.get(2025))} {fmt_wr(year_wr.get(2026))} │ "
-              f"{total_wr:>5.1f}%  {spd:>4.2f}/日  {mark}")
+              f"{fmt_pf(year_pf.get(2022))} {fmt_pf(year_pf.get(2023))} "
+              f"{fmt_pf(year_pf.get(2024))} {fmt_pf(year_pf.get(2025))} "
+              f"{fmt_pf(year_pf.get(2026))} │ "
+              f"{total_str:>7}  {spd:>4.2f}/日  {mark}")
 
         if ok_years and ok_count:
             passed.append({
                 "rsi_hi": rsi_hi, "vol_mult": vol_mult, "close_pct": cp_min,
-                "wr_2023": year_wr.get(2023), "wr_2024": year_wr.get(2024),
-                "wr_2025": year_wr.get(2025), "total_wr": total_wr, "spd": spd
+                "pf_2022": year_pf.get(2022), "pf_2023": year_pf.get(2023),
+                "pf_2024": year_pf.get(2024), "pf_2025": year_pf.get(2025),
+                "total_pf": total_pf, "spd": spd
             })
 
-    print("\n" + "=" * 84)
+    print("\n" + "=" * 96)
     if passed:
         print(f"✅ 合格: {len(passed)}通り")
         for p in passed:
             print(f"  RSI≤{p['rsi_hi']}  Vol≥{p['vol_mult']}x  値位≥{p['close_pct']:.1f}  "
-                  f"│ 2023:{p['wr_2023']:.1f}%  2024:{p['wr_2024']:.1f}%  "
-                  f"2025:{p['wr_2025']:.1f}%  全体:{p['total_wr']:.1f}%  "
-                  f"{p['spd']:.2f}件/日")
+                  f"│ 2022:{p['pf_2022']:.2f}  2023:{p['pf_2023']:.2f}  "
+                  f"2024:{p['pf_2024']:.2f}  2025:{p['pf_2025']:.2f}  "
+                  f"全体PF:{p['total_pf']:.2f}  {p['spd']:.2f}件/日")
     else:
-        print("❌ 合格なし（基準を緩めるか条件を見直す必要あり）")
+        print("❌ 合格なし")
 
 
 def main():

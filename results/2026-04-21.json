@@ -1,0 +1,363 @@
+{
+  "date": "2026-04-21",
+  "strategies": {
+    "breakout": [],
+    "oversold_bounce": [
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 210.0,
+        "entry_price": 210.0,
+        "stop_loss": 189.0,
+        "take_profit": 262.5,
+        "stop_capped": true,
+        "rsi": 17.828658617848177,
+        "rsi30": 24.222079016968223,
+        "macd": -33.764185948235536,
+        "macd_signal": -18.281623159932135,
+        "macd_dir": "down"
+      }
+    ],
+    "vol_dry_bounce": [
+      {
+        "code": "4374",
+        "name": "Robot Payment Inc.",
+        "close": 2261.0,
+        "entry_price": 2261.0,
+        "stop_loss": 2087.8571428571427,
+        "take_profit": 2693.857142857143,
+        "stop_capped": false,
+        "rsi": 41.39171640812114,
+        "rsi30": 43.40811223716356,
+        "macd": -34.364158995053,
+        "macd_signal": -29.78200992449587,
+        "macd_dir": "down"
+      }
+    ],
+    "consec_bear_shadow": [],
+    "noa": [
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 210.0,
+        "entry_price": 210.0,
+        "stop_loss": 189.0,
+        "take_profit": 252.0,
+        "stop_capped": true,
+        "rsi": 17.828658617848177,
+        "rsi30": 24.222079016968223,
+        "macd": -33.764185948235536,
+        "macd_signal": -18.281623159932135,
+        "macd_dir": "down"
+      }
+    ]
+  },
+  "performance": [
+    {
+      "code": "4439",
+      "name": "Toumei Co.,Ltd.",
+      "entry_price": 819.0,
+      "stop_loss": 762.2857142857143,
+      "take_profit": 960.7857142857142,
+      "close_prev": 819.0,
+      "close_now": 877.0,
+      "change_pct": 7.0818070818070815,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "4374",
+      "name": "Robot Payment Inc.",
+      "entry_price": 2261.0,
+      "stop_loss": 2087.8571428571427,
+      "take_profit": 2693.857142857143,
+      "close_prev": 2261.0,
+      "close_now": 2261.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "4598",
+      "name": "Delta-Fly Pharma, Inc.",
+      "entry_price": 204.0,
+      "stop_loss": 186.0,
+      "take_profit": 249.0,
+      "close_prev": 204.0,
+      "close_now": 205.0,
+      "change_pct": 0.49019607843137253,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "3185",
+      "name": "Dream Vision Co.,Ltd.",
+      "entry_price": 178.0,
+      "stop_loss": 160.20000000000002,
+      "take_profit": 222.49999999999994,
+      "close_prev": 178.0,
+      "close_now": 179.0,
+      "change_pct": 0.5617977528089888,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1297.0,
+      "stop_loss": 1167.3,
+      "take_profit": 1621.25,
+      "close_prev": 1297.0,
+      "close_now": 1399.0,
+      "change_pct": 7.864302235929068,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "4316",
+      "name": "BeMap, Inc.",
+      "entry_price": 206.0,
+      "stop_loss": 185.4,
+      "take_profit": 247.2,
+      "close_prev": 206.0,
+      "close_now": 231.0,
+      "change_pct": 12.135922330097088,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "2901",
+      "name": "Wel-Dish.Incorporated",
+      "entry_price": 210.0,
+      "stop_loss": 189.0,
+      "take_profit": 262.5,
+      "close_prev": 210.0,
+      "close_now": 203.0,
+      "change_pct": -3.3333333333333335,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "462A",
+      "name": "FUNDINNO INC",
+      "entry_price": 856.0,
+      "stop_loss": 770.4,
+      "take_profit": 1070.0,
+      "close_prev": 856.0,
+      "close_now": 805.0,
+      "change_pct": -5.957943925233645,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "9168",
+      "name": "Rise Consulting Group, Inc.",
+      "entry_price": 404.0,
+      "stop_loss": 366.42857142857144,
+      "take_profit": 497.9285714285714,
+      "close_prev": 404.0,
+      "close_now": 424.0,
+      "change_pct": 4.9504950495049505,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "4889",
+      "name": "Renascience Inc.",
+      "entry_price": 1446.0,
+      "stop_loss": 1301.4,
+      "take_profit": 1807.4999999999998,
+      "close_prev": 1446.0,
+      "close_now": 1335.0,
+      "change_pct": -7.676348547717843,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "5248",
+      "name": "TECHNOLOGIES, Inc.",
+      "entry_price": 455.0,
+      "stop_loss": 416.42857142857144,
+      "take_profit": 551.4285714285713,
+      "close_prev": 455.0,
+      "close_now": 461.0,
+      "change_pct": 1.3186813186813187,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "160A",
+      "name": "AS PARTNERS CO  LTD",
+      "entry_price": 2164.0,
+      "stop_loss": 2043.106257959757,
+      "take_profit": 2466.234355100608,
+      "close_prev": 2164.0,
+      "close_now": 2143.0,
+      "change_pct": -0.9704251386321626,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "3913",
+      "name": "GreenBee, Inc.",
+      "entry_price": 1053.0,
+      "stop_loss": 959.8571428571429,
+      "take_profit": 1285.8571428571427,
+      "close_prev": 1053.0,
+      "close_now": 1138.0,
+      "change_pct": 8.072174738841406,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "339A",
+      "name": "PROGRESS TECHNOLOGIES GROUP INC",
+      "entry_price": 1349.0,
+      "stop_loss": 1247.7142857142858,
+      "take_profit": 1602.2142857142856,
+      "close_prev": 1349.0,
+      "close_now": 1124.0,
+      "change_pct": -16.679021497405486,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "4932",
+      "name": "Almado, Inc.",
+      "entry_price": 759.0,
+      "stop_loss": 723.0881168967279,
+      "take_profit": 848.7797077581802,
+      "close_prev": 759.0,
+      "close_now": 734.0,
+      "change_pct": -3.293807641633729,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）"
+      ]
+    },
+    {
+      "code": "265A",
+      "name": "HMCOMM INC",
+      "entry_price": 669.0,
+      "stop_loss": 602.1,
+      "take_profit": 836.25,
+      "close_prev": 669.0,
+      "close_now": 688.0,
+      "change_pct": 2.8400597907324365,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型（件数型）",
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "372A",
+      "name": "372A.T",
+      "entry_price": 5700.0,
+      "stop_loss": 5434.285714285715,
+      "take_profit": 6364.285714285714,
+      "close_prev": 5700.0,
+      "close_now": 5630.0,
+      "change_pct": -1.2280701754385965,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    },
+    {
+      "code": "3321",
+      "name": "Mitachi Co., Ltd.",
+      "entry_price": 1915.0,
+      "stop_loss": 1763.4285714285713,
+      "take_profit": 2293.9285714285716,
+      "close_prev": 1915.0,
+      "close_now": 1898.0,
+      "change_pct": -0.8877284595300261,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "2193",
+      "name": "Cookpad Inc.",
+      "entry_price": 133.0,
+      "stop_loss": 120.57142857142857,
+      "take_profit": 164.07142857142858,
+      "close_prev": 133.0,
+      "close_now": 136.0,
+      "change_pct": 2.2556390977443606,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "連続陰線下ヒゲ反発型"
+      ]
+    },
+    {
+      "code": "4667",
+      "name": "Aisan Technology Co.,Ltd.",
+      "entry_price": 1721.0,
+      "stop_loss": 1579.7408588503433,
+      "take_profit": 2074.147852874142,
+      "close_prev": 1721.0,
+      "close_now": 1803.0,
+      "change_pct": 4.764671702498547,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "出来高枯渇反発型"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,499 @@
+{
+  "date": "2026-05-04",
+  "strategies": {
+    "oversold_bounce": [
+      {
+        "code": "1383",
+        "name": "Berg Earth Co.,Ltd.",
+        "close": 2870.0,
+        "entry_price": 2870.0,
+        "stop_loss": 2778.1428571428573,
+        "take_profit": 3099.642857142857,
+        "stop_capped": false,
+        "rsi": 13.253617441437342,
+        "rsi30": 23.468441516774675,
+        "macd": -64.92903079050484,
+        "macd_signal": -10.56615967603905,
+        "macd_dir": "down"
+      },
+      {
+        "code": "2345",
+        "name": "HODL 1,inc.",
+        "close": 186.0,
+        "entry_price": 186.0,
+        "stop_loss": 167.4,
+        "take_profit": 232.5,
+        "stop_capped": true,
+        "rsi": 29.30627222678197,
+        "rsi30": 37.254199146566314,
+        "macd": -0.7827091588393387,
+        "macd_signal": 3.7097924674715603,
+        "macd_dir": "down"
+      },
+      {
+        "code": "2428",
+        "name": "Wellnet Corporation",
+        "close": 615.0,
+        "entry_price": 615.0,
+        "stop_loss": 595.5714285714286,
+        "take_profit": 663.5714285714287,
+        "stop_capped": false,
+        "rsi": 29.32589381702074,
+        "rsi30": 38.1513067006954,
+        "macd": -4.267565659735283,
+        "macd_signal": -1.2615230675188143,
+        "macd_dir": "down"
+      },
+      {
+        "code": "3133",
+        "name": "kaihan co.,Ltd.",
+        "close": 237.0,
+        "entry_price": 237.0,
+        "stop_loss": 213.3,
+        "take_profit": 296.25,
+        "stop_capped": true,
+        "rsi": 16.168959986825413,
+        "rsi30": 28.34633393901477,
+        "macd": -25.59298323565372,
+        "macd_signal": -21.59957493438854,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4994",
+        "name": "Taisei Lamick Group Head Quarter & Innovation Co.,Ltd.",
+        "close": 2321.0,
+        "entry_price": 2321.0,
+        "stop_loss": 2254.0,
+        "take_profit": 2488.5,
+        "stop_capped": false,
+        "rsi": 27.3752359912381,
+        "rsi30": 34.957596769733485,
+        "macd": -56.26685559936186,
+        "macd_signal": -44.40896808890742,
+        "macd_dir": "down"
+      },
+      {
+        "code": "5079",
+        "name": "Novac Co., Ltd.",
+        "close": 2574.0,
+        "entry_price": 2574.0,
+        "stop_loss": 2481.1966646911796,
+        "take_profit": 2806.008338272051,
+        "stop_capped": false,
+        "rsi": 25.909936524661276,
+        "rsi30": 35.351768581068015,
+        "macd": -27.3099568314542,
+        "macd_signal": -3.385790043892305,
+        "macd_dir": "down"
+      },
+      {
+        "code": "9158",
+        "name": "CUC Inc.",
+        "close": 776.0,
+        "entry_price": 776.0,
+        "stop_loss": 698.4,
+        "take_profit": 970.0,
+        "stop_capped": true,
+        "rsi": 24.67133805273353,
+        "rsi30": 37.37079454651801,
+        "macd": -12.003148706910338,
+        "macd_signal": 12.52222693416569,
+        "macd_dir": "down"
+      }
+    ],
+    "noa": [
+      {
+        "code": "1383",
+        "name": "Berg Earth Co.,Ltd.",
+        "close": 2870.0,
+        "entry_price": 2870.0,
+        "stop_loss": 2778.1428571428573,
+        "take_profit": 3053.7142857142853,
+        "stop_capped": false,
+        "rsi": 13.253617441437342,
+        "rsi30": 23.468441516774675,
+        "macd": -64.92903079050484,
+        "macd_signal": -10.56615967603905,
+        "macd_dir": "down"
+      },
+      {
+        "code": "2901",
+        "name": "Wel-Dish.Incorporated",
+        "close": 191.0,
+        "entry_price": 191.0,
+        "stop_loss": 171.9,
+        "take_profit": 229.2,
+        "stop_capped": true,
+        "rsi": 25.6206228306353,
+        "rsi30": 27.74552552764861,
+        "macd": -44.57927575406481,
+        "macd_signal": -39.998953651395624,
+        "macd_dir": "down"
+      },
+      {
+        "code": "3133",
+        "name": "kaihan co.,Ltd.",
+        "close": 237.0,
+        "entry_price": 237.0,
+        "stop_loss": 213.3,
+        "take_profit": 284.4,
+        "stop_capped": true,
+        "rsi": 16.168959986825413,
+        "rsi30": 28.34633393901477,
+        "macd": -25.59298323565372,
+        "macd_signal": -21.59957493438854,
+        "macd_dir": "down"
+      },
+      {
+        "code": "3189",
+        "name": "Anap Holdings Inc.",
+        "close": 137.0,
+        "entry_price": 137.0,
+        "stop_loss": 123.3,
+        "take_profit": 164.4,
+        "stop_capped": true,
+        "rsi": 17.50156552949035,
+        "rsi30": 24.83278846079648,
+        "macd": -18.04646972668519,
+        "macd_signal": -15.808689583091546,
+        "macd_dir": "down"
+      },
+      {
+        "code": "4439",
+        "name": "Toumei Co.,Ltd.",
+        "close": 715.0,
+        "entry_price": 715.0,
+        "stop_loss": 643.5,
+        "take_profit": 858.0,
+        "stop_capped": true,
+        "rsi": 21.36133073687111,
+        "rsi30": 25.72351577610138,
+        "macd": -53.95422553873345,
+        "macd_signal": -40.984719179157516,
+        "macd_dir": "down"
+      },
+      {
+        "code": "7709",
+        "name": "KUBOTEK Corporation",
+        "close": 94.0,
+        "entry_price": 94.0,
+        "stop_loss": 84.60000000000001,
+        "take_profit": 112.79999999999998,
+        "stop_capped": true,
+        "rsi": 29.180710129681188,
+        "rsi30": 29.03371540408793,
+        "macd": -14.29890772304789,
+        "macd_signal": -13.23045655813998,
+        "macd_dir": "down"
+      },
+      {
+        "code": "8931",
+        "name": "Wadakohsan Corporation",
+        "close": 1334.0,
+        "entry_price": 1334.0,
+        "stop_loss": 1250.2857142857142,
+        "take_profit": 1501.4285714285716,
+        "stop_capped": false,
+        "rsi": 20.638169621020552,
+        "rsi30": 25.950599109189525,
+        "macd": -83.92961018546293,
+        "macd_signal": -74.99669024967658,
+        "macd_dir": "down"
+      }
+    ],
+    "minervini": []
+  },
+  "performance": [
+    {
+      "code": "5079",
+      "name": "Novac Co., Ltd.",
+      "entry_price": 2574.0,
+      "stop_loss": 2481.1966646911796,
+      "take_profit": 2806.008338272051,
+      "close_prev": 2574.0,
+      "close_now": 2574.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9158",
+      "name": "CUC Inc.",
+      "entry_price": 776.0,
+      "stop_loss": 698.4,
+      "take_profit": 970.0,
+      "close_prev": 776.0,
+      "close_now": 776.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7709",
+      "name": "KUBOTEK Corporation",
+      "entry_price": 94.0,
+      "stop_loss": 84.60000000000001,
+      "take_profit": 112.79999999999998,
+      "close_prev": 94.0,
+      "close_now": 94.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "8931",
+      "name": "Wadakohsan Corporation",
+      "entry_price": 1334.0,
+      "stop_loss": 1250.2857142857142,
+      "take_profit": 1501.4285714285716,
+      "close_prev": 1334.0,
+      "close_now": 1334.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "3133",
+      "name": "kaihan co.,Ltd.",
+      "entry_price": 237.0,
+      "stop_loss": 213.3,
+      "take_profit": 296.25,
+      "close_prev": 237.0,
+      "close_now": 237.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "3189",
+      "name": "Anap Holdings Inc.",
+      "entry_price": 137.0,
+      "stop_loss": 123.3,
+      "take_profit": 164.4,
+      "close_prev": 137.0,
+      "close_now": 137.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "4994",
+      "name": "Taisei Lamick Group Head Quarter & Innovation Co.,Ltd.",
+      "entry_price": 2321.0,
+      "stop_loss": 2254.0,
+      "take_profit": 2488.5,
+      "close_prev": 2321.0,
+      "close_now": 2321.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "4439",
+      "name": "Toumei Co.,Ltd.",
+      "entry_price": 715.0,
+      "stop_loss": 643.5,
+      "take_profit": 858.0,
+      "close_prev": 715.0,
+      "close_now": 715.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "4316",
+      "name": "BeMap, Inc.",
+      "entry_price": 206.0,
+      "stop_loss": 185.4,
+      "take_profit": 247.2,
+      "close_prev": 206.0,
+      "close_now": 173.0,
+      "change_pct": -16.019417475728158,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "7373",
+      "name": "Aidma Holdings, Inc.",
+      "entry_price": 1297.0,
+      "stop_loss": 1167.3,
+      "take_profit": 1621.25,
+      "close_prev": 1297.0,
+      "close_now": 1232.0,
+      "change_pct": -5.0115651503469545,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "2345",
+      "name": "HODL 1,inc.",
+      "entry_price": 186.0,
+      "stop_loss": 167.4,
+      "take_profit": 232.5,
+      "close_prev": 186.0,
+      "close_now": 186.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2437",
+      "name": "Shinwa Wise Holdings Co.,Ltd.",
+      "entry_price": 465.0,
+      "stop_loss": 418.5,
+      "take_profit": 581.25,
+      "close_prev": 465.0,
+      "close_now": 428.0,
+      "change_pct": -7.956989247311828,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "3185",
+      "name": "Dream Vision Co.,Ltd.",
+      "entry_price": 178.0,
+      "stop_loss": 160.20000000000002,
+      "take_profit": 222.49999999999994,
+      "close_prev": 178.0,
+      "close_now": 207.0,
+      "change_pct": 16.292134831460675,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "1383",
+      "name": "Berg Earth Co.,Ltd.",
+      "entry_price": 2870.0,
+      "stop_loss": 2778.1428571428573,
+      "take_profit": 3099.642857142857,
+      "close_prev": 2870.0,
+      "close_now": 2870.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型",
+        "ニッポン・オプティマライザー（NOA）"
+      ]
+    },
+    {
+      "code": "2428",
+      "name": "Wellnet Corporation",
+      "entry_price": 615.0,
+      "stop_loss": 595.5714285714286,
+      "take_profit": 663.5714285714287,
+      "close_prev": 615.0,
+      "close_now": 615.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "9168",
+      "name": "Rise Consulting Group, Inc.",
+      "entry_price": 404.0,
+      "stop_loss": 366.42857142857144,
+      "take_profit": 497.9285714285714,
+      "close_prev": 404.0,
+      "close_now": 416.0,
+      "change_pct": 2.9702970297029703,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "4932",
+      "name": "Almado, Inc.",
+      "entry_price": 759.0,
+      "stop_loss": 723.0881168967279,
+      "take_profit": 848.7797077581802,
+      "close_prev": 759.0,
+      "close_now": 709.0,
+      "change_pct": -6.587615283267458,
+      "hit_stop": true,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "265A",
+      "name": "HMCOMM INC",
+      "entry_price": 669.0,
+      "stop_loss": 602.1,
+      "take_profit": 836.25,
+      "close_prev": 669.0,
+      "close_now": 664.0,
+      "change_pct": -0.7473841554559043,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "売られすぎ反発型"
+      ]
+    },
+    {
+      "code": "2901",
+      "name": "Wel-Dish.Incorporated",
+      "entry_price": 191.0,
+      "stop_loss": 171.9,
+      "take_profit": 229.2,
+      "close_prev": 191.0,
+      "close_now": 191.0,
+      "change_pct": 0.0,
+      "hit_stop": false,
+      "hit_take": false,
+      "strategies": [
+        "ニッポン・オプティマライザー（NOA）",
+        "売られすぎ反発型"
+      ]
+    }
+  ]
+}
