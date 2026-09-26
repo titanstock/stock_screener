@@ -20,6 +20,8 @@
   python smallcap_research.py build        # 株価・財務を日付ごとにダウンロード（中断しても続きから再開）
   python smallcap_research.py backtest     # 検証期間（ホールドアウト前）で判定
   python smallcap_research.py final        # ホールドアウトで最終確認（1回だけ）
+  python smallcap_research.py volspike     # 仮説2: ヨコヨコ→出来高急増 を検証期間で判定
+  python smallcap_research.py volspike-final  # 仮説2のホールドアウト（1回だけ）
 """
 
 import json, os, sys, time
@@ -60,6 +62,24 @@ PRE_REGISTERED = {
     "min_ev_pct":       0.0,
     "min_years_pf_ge_1": 0.75,               # 半期別 PF≥1.0 の期の割合
     "beat_control":     True,                # 条件なしの全開示（対照群）の期待値を上回ること
+}
+
+
+# 仮説2（ユーザーの観察）: 小型株が一定期間ヨコヨコのあと、出来高が突然膨らむと、
+# その日〜翌日に一気に上がる。シグナルが分かるのは当日の大引け後なので、買えるのは翌日始値から。
+# 結果を見る前に定義を固定する。条件の数値は変えず、変えるなら別仮説として扱う。
+PRE_REGISTERED_VOLSPIKE = {
+    **PRE_REGISTERED,
+    "signal":           "直近20日(当日除く)の高値/安値-1 ≤15% のヨコヨコで、当日出来高 ≥ 直近20日平均の5倍、"
+                        "かつ当日終値が前日終値より高い → 翌営業日の始値で買い",
+    "flat_days":        20,
+    "flat_range_max":   0.15,
+    "vol_mult":         5.0,
+    "min_turnover_yen": 10_000_000,          # 出来高急増の前（当日除く20日平均）で判定
+    "turnover_before_signal": True,
+    "stop_pct":         0.10,
+    "max_hold":         5,                   # 「一気に上がる」短期の動きを検証
+    "control_sample":   20_000,              # 対照群: 同ユニバースの無作為な日に買い
 }
 
 
@@ -184,16 +204,23 @@ def simulate_trade(df: pd.DataFrame, entry_i: int, ticker: str, signal_date: dat
 # ──────────────────────────────────────────────────────────────────────────────
 # 3. 判定
 # ──────────────────────────────────────────────────────────────────────────────
-def split_holdout(trades: list[Trade], use_holdout: bool) -> list[Trade]:
+def split_holdout(trades: list[Trade], use_holdout: bool, hypothesis: str = "revision") -> list[Trade]:
+    """ホールドアウトは仮説ごとに1回だけ使える。2回目以降は参考値と表示する。"""
     cut = date.fromisoformat(PRE_REGISTERED["holdout_from"])
     if not use_holdout:
         return [t for t in trades if t.signal_date < cut]
+    log: dict = {}
     if HOLDOUT_LOG.exists():
-        print(f"⚠️ ホールドアウトは使用済みです（{HOLDOUT_LOG.read_text(encoding='utf-8').strip()}）。"
+        log = json.loads(HOLDOUT_LOG.read_text(encoding="utf-8"))
+        if "used_at" in log:                       # 旧形式（仮説1のみ）
+            log = {"revision": log["used_at"]}
+    if hypothesis in log:
+        print(f"⚠️ この仮説のホールドアウトは使用済みです（{log[hypothesis]}）。"
               "この結果は参考値で、合否判定には使えません。")
     else:
+        log[hypothesis] = date.today().isoformat()
         HOLDOUT_LOG.parent.mkdir(exist_ok=True)
-        HOLDOUT_LOG.write_text(json.dumps({"used_at": date.today().isoformat()}), encoding="utf-8")
+        HOLDOUT_LOG.write_text(json.dumps(log, ensure_ascii=False), encoding="utf-8")
     return [t for t in trades if t.signal_date >= cut]
 
 
@@ -418,8 +445,9 @@ def build_events(fins: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return revisions[["Code", "DiscDate"]], control[["Code", "DiscDate"]]
 
 
-def run_events(events: pd.DataFrame, bars: pd.DataFrame, fins: pd.DataFrame) -> tuple[list[Trade], dict]:
-    """ユニバース（時価総額・流動性）を満たすイベントを、開示翌営業日の始値で売買する。"""
+def run_events(events: pd.DataFrame, bars: pd.DataFrame, fins: pd.DataFrame,
+               cfg: dict = PRE_REGISTERED) -> tuple[list[Trade], dict]:
+    """ユニバース（時価総額・流動性）を満たすイベントを、イベント翌営業日の始値で売買する。"""
     stats = {"events": len(events), "no_price": 0, "out_of_universe": 0, "illiquid": 0,
              "insufficient_window": 0, "duplicate": 0}
     data_end = bars["Date"].max()
@@ -446,18 +474,21 @@ def run_events(events: pd.DataFrame, bars: pd.DataFrame, fins: pd.DataFrame) -> 
             stats["out_of_universe"] += 1
             continue
         mcap = df["RawC"].iloc[entry_i - 1] * sh.iloc[-1]
-        if not (PRE_REGISTERED["min_mcap_yen"] <= mcap <= PRE_REGISTERED["max_mcap_yen"]):
+        if not (cfg["min_mcap_yen"] <= mcap <= cfg["max_mcap_yen"]):
             stats["out_of_universe"] += 1
             continue
-        turnover = (df["RawC"] * df["Vo"]).iloc[entry_i - 20: entry_i].mean()
-        if not turnover >= PRE_REGISTERED["min_turnover_yen"]:
+        end = entry_i - 1 if cfg.get("turnover_before_signal") else entry_i
+        turnover = (df["RawC"] * df["Vo"]).iloc[max(0, end - 20): end].mean()
+        if not turnover >= cfg["min_turnover_yen"]:
             stats["illiquid"] += 1
             continue
         # 保有期間が標本の終わりで切れるイベントは除外（上場廃止で途切れた銘柄は残す）
-        if entry_i + PRE_REGISTERED["max_hold"] > len(df) and df.index[-1] >= data_end:
+        if entry_i + cfg["max_hold"] > len(df) and df.index[-1] >= data_end:
             stats["insufficient_window"] += 1
             continue
-        t = simulate_trade(df, entry_i, ev.Code, ev.DiscDate.date())
+        t = simulate_trade(df, entry_i, ev.Code, ev.DiscDate.date(),
+                           stop_pct=cfg["stop_pct"], max_hold=cfg["max_hold"],
+                           cost_pct=cfg["cost_round_trip"])
         if t:
             trades.append(t)
             busy_until[ev.Code] = pd.Timestamp(t.exit_date)
@@ -487,6 +518,65 @@ def cmd_backtest(use_holdout: bool) -> None:
     print(format_report(f"{phase} 対照群: 全開示の翌日に買い", ctrl, judge=False))
     print()
     print(format_report(f"{phase} 上方修正+10%の翌日に買い", evaluate(main_trades, ctrl.get("ev"))))
+
+
+def build_volspike_events(bars: pd.DataFrame) -> pd.DataFrame:
+    """ヨコヨコ後の出来高急増（上昇引け）の日を返す。DiscDate=シグナル日（大引け後に判明）。"""
+    cfg, out = PRE_REGISTERED_VOLSPIKE, []
+    n = cfg["flat_days"]
+    for code, g in bars.groupby("Code"):
+        g = g.set_index("Date")
+        hi = g["High"].shift(1).rolling(n).max()
+        lo = g["Low"].shift(1).rolling(n).min()
+        avg_vo = g["Vo"].shift(1).rolling(n).mean()
+        prev_c = g["Close"].shift(1)
+        hit = ((hi / lo - 1 <= cfg["flat_range_max"]) & (avg_vo > 0)
+               & (g["Vo"] >= avg_vo * cfg["vol_mult"]) & (g["Close"] > prev_c))
+        if hit.any():
+            nxt_open = g["Open"].shift(-1)
+            sub = g[hit]
+            out.append(pd.DataFrame({
+                "Code": code, "DiscDate": sub.index,
+                "day_ret": (sub["Close"] / prev_c[hit] - 1).to_numpy() * 100,        # 当日の上昇（買えない）
+                "gap": (nxt_open[hit] / sub["Close"] - 1).to_numpy() * 100,           # 翌朝のギャップ（買えない）
+            }))
+    return pd.concat(out, ignore_index=True) if out else pd.DataFrame(columns=["Code", "DiscDate", "day_ret", "gap"])
+
+
+def cmd_volspike(use_holdout: bool) -> None:
+    cfg = PRE_REGISTERED_VOLSPIKE
+    bars, fins = load_bars(), load_fins()
+    print(f"データ: 株価 {bars['Date'].min().date()}〜{bars['Date'].max().date()} {bars['Code'].nunique()}銘柄")
+    print(f"仮説: {cfg['signal']}")
+    print(f"決済: 損切り-{cfg['stop_pct']*100:.0f}% / 最大{cfg['max_hold']}営業日 / コスト往復{cfg['cost_round_trip']}%")
+    print(f"※{cfg['data_note']}")
+    events = build_volspike_events(bars)
+    rng = np.random.default_rng(0)
+    pick = rng.choice(len(bars), size=min(cfg["control_sample"], len(bars)), replace=False)
+    control = bars.iloc[pick][["Code", "Date"]].rename(columns={"Date": "DiscDate"})
+
+    main_trades, main_stats = run_events(events, bars, fins, cfg)
+    ctrl_trades, ctrl_stats = run_events(control, bars, fins, cfg)
+    print(f"出来高急増シグナル(ユニバース判定前): {len(events)}件")
+    print(f"  除外内訳 シグナル: {main_stats}")
+    print(f"  除外内訳 対照群: {ctrl_stats}")
+
+    # 買う前に終わってしまう値動き（当日の上昇・翌朝のギャップ）を実際に売買した銘柄で集計
+    traded = {(t.ticker, t.signal_date) for t in main_trades}
+    ev = events[[(c, d.date()) in traded for c, d in zip(events["Code"], events["DiscDate"])]]
+    if len(ev):
+        print(f"  買えない部分: シグナル当日の上昇 中央値{ev['day_ret'].median():+.1f}% / "
+              f"翌朝ギャップ 中央値{ev['gap'].median():+.1f}%（平均{ev['gap'].mean():+.1f}%）")
+
+    cut = date.fromisoformat(cfg["holdout_from"])
+    ctrl_trades = [t for t in ctrl_trades if (t.signal_date >= cut) == use_holdout]
+    main_trades = split_holdout(main_trades, use_holdout, "volspike")
+    phase = "ホールドアウト(最終確認)" if use_holdout else "検証期間"
+    ctrl = evaluate(ctrl_trades)
+    print()
+    print(format_report(f"{phase} 対照群: 無作為な日に買い", ctrl, judge=False))
+    print()
+    print(format_report(f"{phase} ヨコヨコ→出来高急増の翌日に買い", evaluate(main_trades, ctrl.get("ev"))))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -530,5 +620,9 @@ if __name__ == "__main__":
         cmd_backtest(use_holdout=False)
     elif cmd == "final":
         cmd_backtest(use_holdout=True)
+    elif cmd == "volspike":
+        cmd_volspike(use_holdout=False)
+    elif cmd == "volspike-final":
+        cmd_volspike(use_holdout=True)
     else:
         print(__doc__)
