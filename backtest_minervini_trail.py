@@ -40,7 +40,8 @@ MIN_HISTORY       = 250
 MIN_TURNOVER      = 30_000_000
 MIN_RISE_FROM_LOW = 30.0
 NEAR_HIGH_PCT     = 25.0
-MAX_STOP_PCT      = 0.15   # 初期損切り上限（収縮安値が遠すぎる場合のキャップ）
+MAX_STOP_PCT      = 0.15   # 初期損切り上限
+SKIP_WIDE_STOP    = True   # True: 上限超えのシグナルは見送り（本番と同じ） / False: -15%でキャップ
 
 # グリッド（損切りは動的になったのでSTOP_PCT_LISTを廃止）
 SLOPE_DAYS_LIST    = [20]
@@ -136,7 +137,10 @@ def _backtest_one(df: pd.DataFrame, sig_idx: np.ndarray,
         # 初期損切り = 収縮フェーズ（直近20日）の最安値 × 0.99、最大-15%キャップ
         consol_lo    = np.min(lo[max(0, si - 19): si])
         initial_stop = consol_lo * 0.99
-        initial_stop = max(initial_stop, entry * (1 - MAX_STOP_PCT))
+        if initial_stop < entry * (1 - MAX_STOP_PCT):
+            if SKIP_WIDE_STOP:
+                continue
+            initial_stop = entry * (1 - MAX_STOP_PCT)
 
         trailing_stop = initial_stop
         highest       = entry

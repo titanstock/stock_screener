@@ -8,12 +8,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # 多重起動防止
+# ロックに PID を書き、そのプロセスが既に存在しなければ（強制終了・スリープ中の電源断等で
+# trap が走らず残ったロック）削除して続行する。以前は残ったロックで以降の実行が全てスキップされた。
 LOCKFILE="$SCRIPT_DIR/.screener.lock"
 if [ -f "$LOCKFILE" ]; then
-    echo "既に実行中のプロセスがあります。スキップします。(lockfile: $LOCKFILE)"
-    exit 0
+    OLD_PID="$(cat "$LOCKFILE" 2>/dev/null || true)"
+    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') 既に実行中のプロセスがあります (PID=$OLD_PID)。スキップします。"
+        exit 0
+    fi
+    echo "$(date '+%Y-%m-%d %H:%M:%S') 古いロックファイルを削除します (PID=${OLD_PID:-不明})"
+    rm -f "$LOCKFILE"
 fi
-touch "$LOCKFILE"
+echo $$ > "$LOCKFILE"
 trap 'rm -f "$LOCKFILE"' EXIT
 
 # 仮想環境を有効化

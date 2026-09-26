@@ -72,10 +72,14 @@ NOTIFY_STRATEGIES: set[str] = {
 
 # ミネルヴィニ SEPA型パラメータ
 # 条件: パーフェクトオーダー + MA200上昇 + 52週安値+30% + 52週高値-25%以内 + ブレイクアウト + 出来高
-# バックテスト実績: PF2.04 / EV+4.33% / 2.74件/日（5年間, 500〜5000億）
+# バックテスト再検証（2026-09, backtest_cache.pkl 752銘柄 2021-05〜2026-05, トレール20%, 往復コスト0.4%控除）:
+#   旧ルール(-15%キャップ): 652件 PF1.18 / EV+1.11%  ← キャップ適用46%の群は PF1.00（エッジなし）
+#   新ルール(幅>15%は除外): 353件 PF1.38 / EV+2.01%  ※年別PFは 2022:0.45 2024:0.81 2026:0.30 と不安定
 MINERVINI_BREAKOUT_DAYS: int  = 20     # ブレイクアウト判定期間（日）
 MINERVINI_VOL_MULT: float     = 1.5    # 出来高 ≥ 20日平均の1.5倍
-MINERVINI_STOP_PCT: float     = 0.10   # 初期損切り幅（エントリー比-10%）
+MINERVINI_MAX_STOP_PCT: float = 0.15   # 損切り幅の上限。収縮安値×0.99がこれより遠いシグナルは除外
+MINERVINI_TRAIL_PCT: float    = 0.20   # トレーリングストップ（保有中最高値からの下落率）
+MINERVINI_MAX_HOLD: int       = 60     # 追跡する最大営業日数（バックテストの MAX_HOLD と一致）
 MINERVINI_SLOPE_DAYS: int     = 20     # MA200上昇確認期間（日）
 MINERVINI_MIN_RISE_FROM_LOW: float = 30.0  # 52週安値からの上昇率下限（%）
 MINERVINI_NEAR_HIGH_PCT: float = 25.0  # 52週高値からの最大乖離（%）
@@ -87,7 +91,12 @@ RESULTS_DIR = Path(__file__).parent / "results"
 
 # ポートフォリオ
 PORTFOLIO_FILE     = Path(__file__).parent / "portfolio.json"
-POSITION_MAX_DAYS  = 20   # 最大保有営業日数（超過で期間終了アラート）
+POSITION_MAX_DAYS  = 20   # 最大保有営業日数（超過で期間終了アラート）※ミネルヴィニ型は対象外
+
+# 資金管理（.env で設定。ACCOUNT_SIZE_YEN 未設定なら推奨株数は表示しない）
+ACCOUNT_SIZE_YEN: float    = float(os.getenv("ACCOUNT_SIZE_YEN", "0") or 0)
+RISK_PER_TRADE_PCT: float  = float(os.getenv("RISK_PER_TRADE_PCT", "0.5") or 0.5)  # 1トレードの許容損失（総資金比%）
+LOT_SIZE: int              = 100
 
 # JPX 上場銘柄一覧 URL
 JPX_LIST_URL = (
@@ -284,7 +293,7 @@ def fetch_history(ticker: str, days: int = 400) -> pd.DataFrame | None:
         logger.debug(f"yfinance fetch failed ({ticker}): {e}")
 
     # ── フォールバック: J-Quants ──
-    if df is None and JQUANTS_REFRESH_TOKEN:
+    if df is None and JQUANTS_API_KEY:
         jq = _fetch_history_jquants(code4, days=days)
         if jq is not None and len(jq) >= 200:
             df = jq
@@ -581,23 +590,23 @@ def screen_ticker(ticker: str) -> dict[str, dict] | None:
             cons_lo = float(df["Low"].iloc[-20:-1].min())
             range_contracting = (pre_hi - pre_lo) > 0 and (cons_hi - cons_lo) < (pre_hi - pre_lo)
 
-            if volume_drying and range_contracting:
+            # 損切り = 収縮フェーズ(直近20日)の最安値の1%下。
+            # 上限-15%を超える銘柄は除外する（キャップで損切りを浅くすると
+            # 根拠のない位置に置くことになる。バックテストでも期待値ほぼゼロ）
+            stop = cons_lo * 0.99
+            if (volume_drying and range_contracting
+                    and stop >= close * (1 - MINERVINI_MAX_STOP_PCT)):
                 matched["minervini"] = base.copy()
+                matched["minervini"]["stop_loss"] = stop
 
         if not matched:
             return None
 
-        # ── 損切り・利確を付与 ──
+        # ── 買値・利確を付与（損切りはシグナル判定時に設定済み）──
         if "minervini" in matched:
-            # 損切り = 収縮フェーズ(直近20日)の最安値の1%下、最大-15%でキャップ
-            entry     = close
-            consol_lo = float(df["Low"].iloc[-20:-1].min())
-            stop      = consol_lo * 0.99
-            stop      = max(stop, entry * (1 - MINERVINI_STOP_PCT * 1.5))  # 最大-15%
-            matched["minervini"]["entry_price"] = entry
-            matched["minervini"]["stop_loss"]   = stop
-            matched["minervini"]["stop_capped"] = stop == entry * (1 - MINERVINI_STOP_PCT * 1.5)
-            matched["minervini"]["take_profit"] = None  # トレーリングストップで管理
+            matched["minervini"]["entry_price"] = close
+            matched["minervini"]["stop_capped"] = False  # キャップ廃止（幅超過は除外）
+            matched["minervini"]["take_profit"] = None   # トレーリングストップで管理
 
         # 銘柄名はマッチした場合のみ取得
         try:
@@ -683,6 +692,31 @@ def _fmt_wma(val: float | None) -> str:
     return f"{val:,.1f}" if val is not None else "N/A"
 
 
+def calc_position_size(entry: float, stop: float) -> dict | None:
+    """許容損失（総資金×RISK_PER_TRADE_PCT）から推奨株数を100株単位で算出する。"""
+    if ACCOUNT_SIZE_YEN <= 0 or entry <= stop:
+        return None
+    risk_yen = ACCOUNT_SIZE_YEN * RISK_PER_TRADE_PCT / 100
+    shares   = int(risk_yen / (entry - stop) // LOT_SIZE * LOT_SIZE)
+    return {
+        "shares":     shares,
+        "amount":     shares * entry,
+        "risk_yen":   risk_yen,
+        "weight_pct": shares * entry / ACCOUNT_SIZE_YEN * 100,
+        "lot_risk":   (entry - stop) * LOT_SIZE,   # 最小単位で買った場合の損失額
+    }
+
+
+def _fmt_position_size(entry: float, stop: float) -> list[str]:
+    size = calc_position_size(entry, stop)
+    if size is None:
+        return []
+    if size["shares"] == 0:
+        return [f"  推奨株数  : 見送り（100株でも損失{size['lot_risk']:,.0f}円 > 許容{size['risk_yen']:,.0f}円）"]
+    return [f"  推奨株数  : {size['shares']:,}株（{size['amount']:,.0f}円 / 資金比{size['weight_pct']:.1f}%"
+            f" / 損切り時 -{size['risk_yen']:,.0f}円以内）"]
+
+
 def build_message(
     strategy_key: str,
     strategy_label: str,
@@ -730,10 +764,9 @@ def build_message(
                 f"  前日比    : {r['change_pct']:>+7.2f}%",
                 f"  RSI(14)   : {r['rsi']:.1f}",
                 f"  ※始値目安 : {r['entry_price']:>8,.0f} 円（翌日始値で成行）",
-                f"  損切り    : {r['stop_loss']:>8,.0f} 円（収縮安値-1% / {stop_pct_actual:.1f}%）"
-                + ("  ※上限キャップ適用" if r.get("stop_capped") else ""),
-                f"  利確      : トレーリングストップ20%で管理（利確ライン設定なし）",
-            ] + shinyo_lines
+                f"  損切り    : {r['stop_loss']:>8,.0f} 円（収縮安値-1% / {stop_pct_actual:.1f}%）",
+                f"  利確      : トレーリングストップ{MINERVINI_TRAIL_PCT*100:.0f}%で管理（利確ライン設定なし）",
+            ] + _fmt_position_size(r['entry_price'], r['stop_loss']) + shinyo_lines
 
     return "\n".join(lines)
 
@@ -794,6 +827,12 @@ def save_performance(performances: list[dict], prev_date_str: str) -> None:
                 "hit_stop":     p["hit_stop"],
                 "hit_take":     p["hit_take"],
                 "strategies":   p["strategies"],
+                "signal_date":  p.get("signal_date"),
+                "trail_stop":   p.get("trail_stop"),
+                "highest":      p.get("highest"),
+                "exited":       p.get("exited", False),
+                "exit_date":    p.get("exit_date"),
+                "exit_price":   p.get("exit_price"),
             }
             for p in performances
         ]
@@ -853,6 +892,29 @@ def load_recent_results(max_hold: int = 20) -> list[dict]:
 # ──────────────────────────────────────────────────────────────────────────────
 # 前日パフォーマンス分析
 # ──────────────────────────────────────────────────────────────────────────────
+def simulate_trailing_stop(
+    df: pd.DataFrame, since: date, stop: float, trail_pct: float = MINERVINI_TRAIL_PCT,
+) -> dict:
+    """シグナル翌営業日以降の値動きで、初期損切り＋トレーリングストップを再現する。
+    backtest_minervini_trail.py と同じ判定（寄りで割れたら始値、場中に割れたらストップ値で約定）。"""
+    after = df[df.index.date > since]
+    stop_now = stop
+    highest  = float("nan")
+    for ts, row in after.iterrows():
+        op, hi, lo = float(row["Open"]), float(row["High"]), float(row["Low"])
+        if op <= stop_now:
+            return {"exited": True, "exit_date": ts.date().isoformat(), "exit_price": op,
+                    "highest": highest, "trail_stop": stop_now}
+        if pd.isna(highest) or hi > highest:
+            highest  = hi
+            stop_now = max(stop_now, highest * (1 - trail_pct))
+        if lo <= stop_now:
+            return {"exited": True, "exit_date": ts.date().isoformat(), "exit_price": stop_now,
+                    "highest": highest, "trail_stop": stop_now}
+    return {"exited": False, "exit_date": None, "exit_price": None,
+            "highest": highest, "trail_stop": stop_now}
+
+
 def fetch_stock_performance(entry: dict) -> dict | None:
     """
     スクリーニング結果の 1 銘柄について現在のパフォーマンスを計算する。
@@ -860,7 +922,7 @@ def fetch_stock_performance(entry: dict) -> dict | None:
     """
     ticker = entry["code"] + ".T"
     try:
-        df = fetch_history(ticker, days=100)
+        df = fetch_history(ticker, days=400)
         if df is None or len(df) < 2:
             return None
 
@@ -879,6 +941,16 @@ def fetch_stock_performance(entry: dict) -> dict | None:
         take_profit = entry.get("take_profit")
         hit_stop    = stop_loss   is not None and close_now <= stop_loss
         hit_take    = take_profit is not None and close_now >= take_profit
+
+        # ミネルヴィニ型: 初期損切り→トレーリングストップの経路で決済済みか判定
+        trail: dict = {}
+        if STRATEGIES["minervini"] in entry.get("strategies", []) and stop_loss is not None \
+                and entry.get("signal_date"):
+            trail = simulate_trailing_stop(
+                df, date.fromisoformat(entry["signal_date"]), float(stop_loss))
+            if trail["exited"]:
+                hit_stop   = True
+                change_pct = (trail["exit_price"] - entry_price) / entry_price * 100
 
         return {
             "code":             entry["code"],
@@ -902,6 +974,11 @@ def fetch_stock_performance(entry: dict) -> dict | None:
             "macd_signal_now":  sig_now,
             "macd_dir_now":     macd_dir_now,
             "strategies":       entry.get("strategies", []),
+            "trail_stop":       trail.get("trail_stop"),
+            "highest":          trail.get("highest"),
+            "exited":           trail.get("exited", False),
+            "exit_date":        trail.get("exit_date"),
+            "exit_price":       trail.get("exit_price"),
         }
     except Exception as e:
         logger.debug(f"{ticker}: パフォーマンス取得失敗 ({e})")
@@ -941,9 +1018,9 @@ def _perf_comment(change_pct: float, rsi_prev: float, rsi_now: float,
 
 
 def build_performance_message(prev_date_str: str, performances: list[dict]) -> str:
-    """追跡銘柄パフォーマンス LINE メッセージを生成する（最大20営業日追跡）。"""
+    """追跡銘柄パフォーマンス LINE メッセージを生成する。"""
     now    = _now_str()
-    header = f"【保有追跡パフォーマンス】(最大20営業日) {now}"
+    header = f"【シグナル追跡】(最大{MINERVINI_MAX_HOLD}営業日・トレール{MINERVINI_TRAIL_PCT*100:.0f}%) {now}"
 
     if not performances:
         return f"{header}\n追跡銘柄のデータを取得できませんでした。"
@@ -959,7 +1036,9 @@ def build_performance_message(prev_date_str: str, performances: list[dict]) -> s
         sig_date     = p.get("signal_date", prev_date_str)
 
         alert = ""
-        if p.get("hit_take"):
+        if p.get("exited"):
+            alert = f" ■決済済み({p['exit_date']})"
+        elif p.get("hit_take"):
             alert = " ★利確到達"
         elif p.get("hit_stop"):
             alert = " ▼損切到達"
@@ -973,8 +1052,12 @@ def build_performance_message(prev_date_str: str, performances: list[dict]) -> s
             f"▶ {p['code']}  {p['name']}{alert}",
             f"  シグナル日: {sig_date} ({hold_days}営業日経過)",
             f"  買値目安  : {entry:>8,.0f} 円" if entry else "",
-            f"  現在値    : {p['close_now']:>8,.0f} 円  ({p['change_pct']:>+.2f}%)",
+            (f"  決済値    : {p['exit_price']:>8,.0f} 円  ({p['change_pct']:>+.2f}%)"
+             if p.get("exited") else
+             f"  現在値    : {p['close_now']:>8,.0f} 円  ({p['change_pct']:>+.2f}%)"),
             f"  損切り    : {stop:>8,.0f} 円" if stop else "",
+            (f"  現在ストップ: {p['trail_stop']:>8,.0f} 円（最高値{p['highest']:,.0f}円）"
+             if p.get("trail_stop") and not p.get("exited") and not pd.isna(p.get("highest")) else ""),
             f"  利確目安  : {take:>8,.0f} 円" if take else "",
             f"  評価      : {comment}",
             f"  RSI       : {p['rsi_prev']:.1f} → {p['rsi_now']:.1f}",
@@ -1231,7 +1314,8 @@ def add_position(
     stop: float | None = None,
     take: float | None = None,
 ) -> None:
-    """保有銘柄を追加する。stop/take 未指定時は ATR から自動計算。"""
+    """保有銘柄を追加する。stop 未指定時、ミネルヴィニ型は直近20日安値×0.99（上限-15%）、
+    それ以外は ATR から自動計算。ミネルヴィニ型は利確ラインを置かずトレーリングで管理。"""
     ticker = code + ".T"
 
     name = code
@@ -1241,7 +1325,19 @@ def add_position(
     except Exception:
         pass
 
-    if stop is None or take is None:
+    if strategy_type == "minervini":
+        if stop is None:
+            df = fetch_history(ticker, days=100)
+            if df is not None and len(df) >= 21:
+                prior = df[df.index.date < date.today()]
+                stop  = float(prior["Low"].iloc[-20:].min()) * 0.99
+                floor = entry_price * (1 - MINERVINI_MAX_STOP_PCT)
+                if stop < floor:
+                    print(f"⚠️ 収縮安値×0.99 ({stop:,.0f}円) が-{MINERVINI_MAX_STOP_PCT*100:.0f}%を超えています。"
+                          f"ルール上はエントリー見送りの形です。損切りを{floor:,.0f}円に設定します。")
+                    stop = floor
+        take = None
+    elif stop is None or take is None:
         df = fetch_history(ticker, days=100)
         if df is not None and len(df) >= 20:
             atr = calc_atr(df)
@@ -1313,7 +1409,7 @@ def fetch_portfolio_updates() -> list[dict]:
     for pos in positions:
         ticker = pos["code"] + ".T"
         try:
-            df = fetch_history(ticker, days=10)
+            df = fetch_history(ticker, days=400)
             if df is None or len(df) < 1:
                 continue
             current = float(df["Close"].iloc[-1])
@@ -1324,6 +1420,15 @@ def fetch_portfolio_updates() -> list[dict]:
         stop  = pos.get("stop_loss")
         take  = pos.get("take_profit")
         held  = count_business_days(pos["entry_date"])
+        is_minerv = pos.get("strategy_type") == "minervini"
+
+        # ミネルヴィニ型: 保有中最高値から-20%のトレーリングストップに引き上げる
+        trail_hit = False
+        highest   = None
+        if is_minerv and stop is not None:
+            since = date.fromisoformat(pos["entry_date"]) - timedelta(days=1)
+            trail = simulate_trailing_stop(df, since, float(stop))
+            stop, trail_hit, highest = trail["trail_stop"], trail["exited"], trail["highest"]
 
         pnl_pct    = (current - entry) / entry * 100 if entry > 0 else 0.0
         stop_dist  = (stop  - current) / current * 100 if stop  is not None else None
@@ -1342,9 +1447,10 @@ def fetch_portfolio_updates() -> list[dict]:
             "pnl_pct":       pnl_pct,
             "stop_dist_pct": stop_dist,
             "take_dist_pct": take_dist,
-            "hit_stop":      stop is not None and current <= stop,
+            "hit_stop":      trail_hit or (stop is not None and current <= stop),
             "hit_take":      take is not None and current >= take,
-            "expired":       held >= POSITION_MAX_DAYS,
+            "expired":       not is_minerv and held >= POSITION_MAX_DAYS,
+            "highest":       highest,
         })
 
     return updates
@@ -1363,7 +1469,7 @@ def build_portfolio_message(updates: list[dict]) -> str | None:
 
     for u in updates:
         if u["hit_stop"]:
-            alert = "  ⚠️損切りサイン"
+            alert = "  ⚠️トレーリングストップ到達（決済）" if u.get("highest") else "  ⚠️損切りサイン"
         elif u["hit_take"]:
             alert = "  🎯利確サイン"
         elif u["expired"]:
@@ -1383,8 +1489,10 @@ def build_portfolio_message(updates: list[dict]) -> str | None:
         )
         block.append(f"  損益：{pnl_sign}{u['pnl_pct']:.1f}%")
         if u["stop_loss"] is not None:
+            label = "ストップ" if u.get("highest") else "損切り"
             block.append(
-                f"  損切り：{u['stop_loss']:,.0f}円（まで{u['stop_dist_pct']:+.1f}%）"
+                f"  {label}：{u['stop_loss']:,.0f}円（まで{u['stop_dist_pct']:+.1f}%）"
+                + (f" 最高値{u['highest']:,.0f}円" if u.get("highest") else "")
             )
         if u["take_profit"] is not None:
             block.append(
@@ -1399,14 +1507,47 @@ def build_portfolio_message(updates: list[dict]) -> str | None:
 # ──────────────────────────────────────────────────────────────────────────────
 # スクリーニング実行（3戦略並列）
 # ──────────────────────────────────────────────────────────────────────────────
+def find_missed_run_days() -> list[str]:
+    """前回の結果JSONから今日までの間で、結果が保存されていない平日を返す（祝日は判別しない）。"""
+    today = date.today()
+    past = []
+    for path in RESULTS_DIR.glob("*.json"):
+        try:
+            d = date.fromisoformat(path.stem)
+        except ValueError:
+            continue
+        if d < today:
+            past.append(d)
+    if not past:
+        return []
+    missed = []
+    d = max(past) + timedelta(days=1)
+    while d < today:
+        if d.weekday() < 5:
+            missed.append(d.isoformat())
+        d += timedelta(days=1)
+    return missed
+
+
 def run_screening(use_cache: bool = True) -> None:
     logger.info("=" * 60)
     logger.info(f"スクリーニング開始（3戦略 / 並列 {MAX_WORKERS} ワーカー）")
     _load_ohlcv_cache(skip=not use_cache)
 
+    # ── 実行漏れ検知（Mac スリープ・ロック残り等でスキップされた日を通知）──
+    missed_days = find_missed_run_days()
+    missed_msg: str | None = None
+    if missed_days:
+        logger.warning(f"実行漏れ: {', '.join(missed_days)}")
+        missed_msg = (
+            f"【⚠️ 実行漏れ】{len(missed_days)}営業日分のスクリーニングが実行されていません\n"
+            f"{missed_days[0]} 〜 {missed_days[-1]}\n"
+            "（祝日なら問題なし。それ以外は Mac のスリープ / .screener.lock の残存を確認）"
+        )
+
     # ── 過去20営業日のパフォーマンスを事前取得 ──
     performance_msg: str | None = None
-    recent_files = load_recent_results(max_hold=20)
+    recent_files = load_recent_results(max_hold=MINERVINI_MAX_HOLD)
     if recent_files:
         # 有効な3戦略のみ・unique な銘柄を集約（最新シグナル日を優先）
         TRACK_MAX = 20   # 追跡銘柄の上限
@@ -1438,7 +1579,7 @@ def run_screening(use_cache: bool = True) -> None:
             reverse=True,
         )[:TRACK_MAX]
         prev_date_str = recent_files[0]["signal_date"]   # 最新シグナル日
-        logger.info(f"追跡銘柄 {len(prev_entries)} 件（上限{TRACK_MAX}件・過去20営業日）のパフォーマンスを取得中...")
+        logger.info(f"追跡銘柄 {len(prev_entries)} 件（上限{TRACK_MAX}件・過去{MINERVINI_MAX_HOLD}営業日）のパフォーマンスを取得中...")
 
         performances: list[dict] = []
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -1525,6 +1666,8 @@ def run_screening(use_cache: bool = True) -> None:
     line_parts: list[str] = []
     discord_parts: list[str] = []
 
+    if missed_msg:
+        line_parts.append(missed_msg)
     if performance_msg:
         line_parts.append(performance_msg)
 
