@@ -26,3 +26,6 @@ node_modules/
 
 # plist（ローカル自動実行設定）
 *.plist
+
+# 小型株リサーチのダウンロードデータ（容量大・再取得可能）
+data_cache/

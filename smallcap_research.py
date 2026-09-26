@@ -3,8 +3,11 @@
 """
 小型株リサーチ（検証専用・実売買には使わない）
 ================================================
-仮説: 小型株はアナリストのカバーが薄く、好決算が株価に織り込まれるまで時間がかかる
-      （決算後ドリフト / PEAD）。好決算の開示翌日に買えば、その遅れを取れるのではないか。
+仮説: 小型株はアナリストのカバーが薄く、好材料が株価に織り込まれるまで時間がかかる
+      （決算後ドリフト / PEAD）。会社が通期の営業利益予想を上方修正した翌日に買えば、
+      その遅れを取れるのではないか。
+      ※J-Quants 無料プランは約2年分（2024-07〜）しかなく、前年同期比は比較対象がほぼ無い。
+        1回前の開示と比べるだけで判定できる「予想の上方修正」を主仮説にした。
 
 このファイルは「仮説が本物か」を公正に判定するための土台。
   - 合格基準はコードを書く前に固定する（下の PRE_REGISTERED。結果を見てから変えない）
@@ -14,9 +17,12 @@
 使い方:
   python smallcap_research.py check        # J-Quants で何のデータが取れるか診断
   python smallcap_research.py selftest     # 売買シミュレーションの動作確認（データ不要）
+  python smallcap_research.py build        # 株価・財務を日付ごとにダウンロード（中断しても続きから再開）
+  python smallcap_research.py backtest     # 検証期間（ホールドアウト前）で判定
+  python smallcap_research.py final        # ホールドアウトで最終確認（1回だけ）
 """
 
-import json, os, sys
+import json, os, sys, time
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -31,22 +37,29 @@ load_dotenv(Path(__file__).parent / ".env")
 JQUANTS_API_BASE = "https://api.jquants.com/v2"
 JQUANTS_API_KEY  = os.getenv("JQUANTS_API_KEY", os.getenv("JQUANTS_REFRESH_TOKEN", ""))
 HOLDOUT_LOG      = Path(__file__).parent / "results" / "holdout_used.json"
+DATA_DIR         = Path(__file__).parent / "data_cache" / "smallcap"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 事前登録（検証結果を見る前に固定。変更したら別の仮説として最初からやり直す）
 # ──────────────────────────────────────────────────────────────────────────────
 PRE_REGISTERED = {
-    "universe":         "時価総額 50〜300億円（シグナル時点の株価×発行済株式数）",
+    "data_note":        "J-Quants無料プラン（約2年分）。期間が短く相場局面が限られるため、合格しても信頼性は低い",
+    "signal":           "通期営業利益予想(FOP)を前回開示比+10%以上に上方修正（前回FOP>0）。開示翌営業日の始値で買い",
+    "min_revision":     0.10,
+    "universe":         "時価総額 50〜300億円（シグナル時点の株価×(発行済株式数-自己株式)）",
+    "min_mcap_yen":     50 * 10**8,
+    "max_mcap_yen":     300 * 10**8,
     "min_turnover_yen": 30_000_000,          # 20日平均売買代金の下限
     "cost_round_trip":  0.6,                 # 往復コスト%（手数料0 + スプレッド/スリッページ）
     "stop_pct":         0.15,                # 初期損切り（エントリー比）
     "max_hold":         60,                  # 最大保有営業日
-    "holdout_from":     "2025-01-01",        # これ以降は最終確認まで使わない
+    "holdout_from":     "2025-10-01",        # これ以降は最終確認まで使わない（データが2年のため）
     # 合格基準（すべて満たすこと）
     "min_trades":       100,
     "min_pf":           1.3,
     "min_ev_pct":       0.0,
-    "min_years_pf_ge_1": 0.75,               # 年別 PF≥1.0 の年の割合
+    "min_years_pf_ge_1": 0.75,               # 半期別 PF≥1.0 の期の割合
+    "beat_control":     True,                # 条件なしの全開示（対照群）の期待値を上回ること
 }
 
 
@@ -184,42 +197,296 @@ def split_holdout(trades: list[Trade], use_holdout: bool) -> list[Trade]:
     return [t for t in trades if t.signal_date >= cut]
 
 
-def evaluate(trades: list[Trade]) -> dict:
+def _period(d: date) -> str:
+    return f"{d.year}{'H1' if d.month <= 6 else 'H2'}"
+
+
+def evaluate(trades: list[Trade], control_ev: float | None = None) -> dict:
+    """事前登録の基準で判定する。control_ev は条件なし（対照群）の期待値。"""
     if not trades:
         return {"n": 0, "passed": False}
     r = np.array([t.ret_pct for t in trades])
     gain, loss = r[r > 0].sum(), -r[r <= 0].sum()
-    by_year: dict[int, float] = {}
-    for y in sorted({t.signal_date.year for t in trades}):
-        ry = np.array([t.ret_pct for t in trades if t.signal_date.year == y])
-        g, l = ry[ry > 0].sum(), -ry[ry <= 0].sum()
-        by_year[y] = float(g / l) if l > 0 else float("inf")
+    by_period: dict[str, float] = {}
+    for p in sorted({_period(t.signal_date) for t in trades}):
+        rp = np.array([t.ret_pct for t in trades if _period(t.signal_date) == p])
+        g, l = rp[rp > 0].sum(), -rp[rp <= 0].sum()
+        by_period[p] = float(g / l) if l > 0 else float("inf")
     pf = float(gain / loss) if loss > 0 else float("inf")
-    years_ok = sum(v >= 1.0 for v in by_year.values()) / len(by_year)
+    periods_ok = sum(v >= 1.0 for v in by_period.values()) / len(by_period)
     reasons = pd.Series([t.reason for t in trades]).value_counts().to_dict()
+    beats = control_ev is None or r.mean() > control_ev
     passed = (len(r) >= PRE_REGISTERED["min_trades"] and pf >= PRE_REGISTERED["min_pf"]
               and r.mean() > PRE_REGISTERED["min_ev_pct"]
-              and years_ok >= PRE_REGISTERED["min_years_pf_ge_1"])
+              and periods_ok >= PRE_REGISTERED["min_years_pf_ge_1"]
+              and (beats or not PRE_REGISTERED["beat_control"]))
     return {"n": len(r), "win_rate": float((r > 0).mean() * 100), "pf": pf,
             "ev": float(r.mean()), "median": float(np.median(r)), "worst": float(r.min()),
-            "by_year_pf": by_year, "years_pf_ge_1": years_ok, "exit_reasons": reasons,
-            "passed": passed}
+            "by_period_pf": by_period, "periods_pf_ge_1": periods_ok, "exit_reasons": reasons,
+            "control_ev": control_ev, "passed": passed}
 
 
-def format_report(title: str, ev: dict) -> str:
+def format_report(title: str, ev: dict, judge: bool = True) -> str:
     if ev["n"] == 0:
         return f"【{title}】シグナル0件"
-    yrs = "  ".join(f"{y}:{p:.2f}" for y, p in ev["by_year_pf"].items())
-    return "\n".join([
+    per = "  ".join(f"{p}:{v:.2f}" for p, v in ev["by_period_pf"].items())
+    lines = [
         f"【{title}】（コスト{PRE_REGISTERED['cost_round_trip']}%控除後）",
         f"件数 {ev['n']} / 勝率 {ev['win_rate']:.1f}% / PF {ev['pf']:.2f} / 期待値 {ev['ev']:+.2f}%"
         f" / 中央値 {ev['median']:+.2f}% / 最悪 {ev['worst']:+.1f}%",
-        f"年別PF: {yrs}",
+        f"半期別PF: {per}",
         f"決済理由: {ev['exit_reasons']}",
-        f"判定: {'✅ 合格' if ev['passed'] else '❌ 不合格'}"
-        f"（基準: {PRE_REGISTERED['min_trades']}件以上・PF≥{PRE_REGISTERED['min_pf']}・期待値>0・"
-        f"年別PF≥1.0が{PRE_REGISTERED['min_years_pf_ge_1']*100:.0f}%以上の年）",
-    ])
+    ]
+    if judge:
+        ctrl = "" if ev["control_ev"] is None else f"・対照群の期待値{ev['control_ev']:+.2f}%超"
+        lines.append(
+            f"判定: {'✅ 合格' if ev['passed'] else '❌ 不合格'}"
+            f"（基準: {PRE_REGISTERED['min_trades']}件以上・PF≥{PRE_REGISTERED['min_pf']}・期待値>0・"
+            f"半期PF≥1.0が{PRE_REGISTERED['min_years_pf_ge_1']*100:.0f}%以上{ctrl}）")
+    return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 4. データ取得（日付ごと・中断再開可）
+# ──────────────────────────────────────────────────────────────────────────────
+_req_interval = float(os.getenv("SMALLCAP_REQ_INTERVAL", "1.0") or 1.0)
+_last_req = 0.0
+
+
+class JQError(RuntimeError):
+    pass
+
+
+def _jq_fetch_all(path: str, params: dict) -> list[dict]:
+    """ページ送り・レート制限(429)・一時エラーに対応して全件取得する。"""
+    global _req_interval, _last_req
+    rows: list[dict] = []
+    p = dict(params)
+    while True:
+        for attempt in range(8):
+            wait = _last_req + _req_interval - time.time()
+            if wait > 0:
+                time.sleep(wait)
+            _last_req = time.time()
+            st, body = _jq_get(path, p)
+            if st == 429:
+                _req_interval = min(max(_req_interval * 2, 1.0), 20.0)
+                print(f"  レート制限 → 60秒待機（以後{_req_interval:.0f}秒間隔）", flush=True)
+                time.sleep(60)
+                continue
+            if st == -1 or st >= 500:
+                time.sleep(min(5 * 2 ** attempt, 120))
+                continue
+            break
+        if st != 200:
+            raise JQError(f"{path} {p}: HTTP {st} {str(body)[:150]}")
+        rows += _rows(body)
+        key = body.get("pagination_key") if isinstance(body, dict) else None
+        if not key:
+            return rows
+        p["pagination_key"] = key
+
+
+def _plan_range() -> tuple[date, date]:
+    """契約プランで取得できる期間を、エラーメッセージから読み取る。"""
+    import re
+    st, body = _jq_get("/equities/bars/daily", {"code": "7203", "from": "2000-01-04", "to": "2000-01-05"})
+    m = re.search(r"(\d{4}-\d{2}-\d{2}) ~ (\d{4}-\d{2}-\d{2})", str(body))
+    if m:
+        return date.fromisoformat(m.group(1)), date.fromisoformat(m.group(2))
+    return date.today() - timedelta(days=730), date.today()
+
+
+def _business_days(frm: date, to: date) -> list[date]:
+    try:
+        rows = _jq_fetch_all("/markets/calendar", {"from": frm.isoformat(), "to": to.isoformat()})
+        hol_key = next((k for k in rows[0] if "hol" in k.lower()), None) if rows else None
+        if hol_key:
+            return [date.fromisoformat(r["Date"][:10]) for r in rows if str(r[hol_key]) in ("1", "2")]
+    except (JQError, KeyError, ValueError):
+        pass
+    return [d.date() for d in pd.bdate_range(frm, to)]
+
+
+BAR_COLS = ["Date", "Code", "AdjO", "AdjH", "AdjL", "AdjC", "AdjVo", "O", "H", "L", "C", "Vo"]
+
+
+def _save(path: Path, rows: list[dict], keep: list[str] | None = None) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    df = pd.DataFrame(rows)
+    if keep:
+        df = df[[c for c in keep if c in df.columns]]      # 容量削減（必要な列だけ）
+    df.to_pickle(tmp)
+    tmp.replace(path)                                   # 途中で止まっても壊れたファイルを残さない
+
+
+def cmd_build() -> None:
+    if not JQUANTS_API_KEY:
+        print(".env に JQUANTS_API_KEY がありません")
+        return
+    frm, to = _plan_range()
+    days = [d for d in _business_days(frm, to) if frm <= d <= min(to, date.today())]
+    print(f"取得期間: {frm} 〜 {to}（営業日 {len(days)}日）", flush=True)
+
+    # 財務は日付指定が使えるか先に確認（使えなければ銘柄ごとに取得）
+    probe = days[len(days) // 2: len(days) // 2 + 10]
+    try:
+        fins_by_date = any(_jq_fetch_all("/fins/summary", {"date": d.isoformat()}) for d in probe)
+    except JQError:
+        fins_by_date = False
+    print(f"財務の取得方式: {'日付ごと' if fins_by_date else '銘柄ごと'}", flush=True)
+
+    jobs = [("bars", d.isoformat(), "/equities/bars/daily", {"date": d.isoformat()}) for d in days]
+    if fins_by_date:
+        jobs += [("fins", d.isoformat(), "/fins/summary", {"date": d.isoformat()}) for d in days]
+    todo = [j for j in jobs if not (DATA_DIR / j[0] / f"{j[1]}.pkl").exists()]
+    print(f"未取得: {len(todo)} / {len(jobs)} 件（1件あたり約{_req_interval:.0f}秒）", flush=True)
+    t0 = time.time()
+    for i, (kind, key, path, params) in enumerate(todo, 1):
+        _save(DATA_DIR / kind / f"{key}.pkl", _jq_fetch_all(path, params),
+              BAR_COLS if kind == "bars" else None)
+        if i % 25 == 0 or i == len(todo):
+            eta = (time.time() - t0) / i * (len(todo) - i) / 60
+            print(f"  {i}/{len(todo)} 件完了（残り約{eta:.0f}分）", flush=True)
+
+    if not fins_by_date:
+        codes = sorted(load_bars()["Code"].unique())
+        todo = [c for c in codes if not (DATA_DIR / "fins_code" / f"{c}.pkl").exists()]
+        print(f"財務（銘柄ごと）未取得: {len(todo)} 銘柄", flush=True)
+        for i, c in enumerate(todo, 1):
+            _save(DATA_DIR / "fins_code" / f"{c}.pkl", _jq_fetch_all("/fins/summary", {"code": c}))
+            if i % 100 == 0 or i == len(todo):
+                print(f"  {i}/{len(todo)} 銘柄完了", flush=True)
+    print("✅ ダウンロード完了", flush=True)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 5. シグナル作成と検証
+# ──────────────────────────────────────────────────────────────────────────────
+def _pick(df: pd.DataFrame, *names: str) -> pd.Series:
+    for n in names:
+        if n in df.columns:
+            return pd.to_numeric(df[n], errors="coerce")
+    return pd.Series(np.nan, index=df.index)
+
+
+def load_bars() -> pd.DataFrame:
+    parts = [pd.read_pickle(f) for f in sorted((DATA_DIR / "bars").glob("*.pkl"))]
+    df = pd.concat([p for p in parts if len(p)], ignore_index=True)
+    out = pd.DataFrame({
+        "Code":  df["Code"].astype(str),
+        "Date":  pd.to_datetime(df["Date"]),
+        "Open":  _pick(df, "AdjO", "AdjustmentOpen", "O"),
+        "High":  _pick(df, "AdjH", "AdjustmentHigh", "H"),
+        "Low":   _pick(df, "AdjL", "AdjustmentLow", "L"),
+        "Close": _pick(df, "AdjC", "AdjustmentClose", "C"),
+        "RawC":  _pick(df, "C", "Close", "AdjC"),
+        "Vo":    _pick(df, "Vo", "Volume", "AdjVo"),
+    })
+    return out.dropna(subset=["Open", "High", "Low", "Close"]).sort_values(["Code", "Date"])
+
+
+def load_fins() -> pd.DataFrame:
+    files = sorted((DATA_DIR / "fins").glob("*.pkl")) + sorted((DATA_DIR / "fins_code").glob("*.pkl"))
+    parts = [pd.read_pickle(f) for f in files]
+    df = pd.concat([p for p in parts if len(p)], ignore_index=True)
+    df["Code"] = df["Code"].astype(str)
+    df["DiscDate"] = pd.to_datetime(df["DiscDate"], errors="coerce")
+    df["shares"] = _pick(df, "ShOutFY") - _pick(df, "TrShFY").fillna(0)
+    sort_cols = ["Code", "DiscDate"] + (["DiscNo"] if "DiscNo" in df.columns else [])
+    df = df.dropna(subset=["DiscDate"]).drop_duplicates(subset=[c for c in sort_cols if c in df.columns])
+    return df.sort_values(sort_cols).reset_index(drop=True)
+
+
+def build_events(fins: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(上方修正イベント, 対照群=全開示イベント) を返す。どちらも Code/DiscDate を持つ。"""
+    # 同じ決算期の営業利益予想を開示順に並べる。期初予想は前年度の本決算資料に
+    # 「来期予想」(NxFOP) として載るので、それも同じ系列に入れる
+    order = fins["DiscNo"] if "DiscNo" in fins.columns else pd.Series(range(len(fins)), index=fins.index)
+    cur = pd.DataFrame({"Code": fins["Code"], "DiscDate": fins["DiscDate"], "order": order,
+                        "target": fins.get("CurFYEn"),
+                        "fc": _pick(fins, "FOP").fillna(_pick(fins, "FNCOP"))})
+    nxt = pd.DataFrame({"Code": fins["Code"], "DiscDate": fins["DiscDate"], "order": order,
+                        "target": fins.get("NxFYEn"),
+                        "fc": _pick(fins, "NxFOP").fillna(_pick(fins, "NxFNCOP"))})
+    tl = (pd.concat([cur, nxt]).dropna(subset=["target", "fc"])
+          .sort_values(["Code", "target", "DiscDate", "order"]))
+    prev = tl.groupby(["Code", "target"])["fc"].shift(1)
+    revisions = tl[(prev > 0) & (tl["fc"] / prev - 1 >= PRE_REGISTERED["min_revision"])]
+    control = fins.drop_duplicates(subset=["Code", "DiscDate"])
+    return revisions[["Code", "DiscDate"]], control[["Code", "DiscDate"]]
+
+
+def run_events(events: pd.DataFrame, bars: pd.DataFrame, fins: pd.DataFrame) -> tuple[list[Trade], dict]:
+    """ユニバース（時価総額・流動性）を満たすイベントを、開示翌営業日の始値で売買する。"""
+    stats = {"events": len(events), "no_price": 0, "out_of_universe": 0, "illiquid": 0,
+             "insufficient_window": 0, "duplicate": 0}
+    data_end = bars["Date"].max()
+    by_code = {c: g.set_index("Date") for c, g in bars.groupby("Code")}
+    shares_by_code = {c: g.dropna(subset=["shares"]).set_index("DiscDate")["shares"]
+                      for c, g in fins.groupby("Code")}
+    trades: list[Trade] = []
+    busy_until: dict[str, pd.Timestamp] = {}
+    for ev in events.sort_values("DiscDate").itertuples():
+        df = by_code.get(ev.Code)
+        if df is None:
+            stats["no_price"] += 1
+            continue
+        if busy_until.get(ev.Code, pd.Timestamp.min) >= ev.DiscDate:
+            stats["duplicate"] += 1
+            continue
+        entry_i = int(df.index.searchsorted(ev.DiscDate, side="right"))   # 開示日の翌営業日
+        if entry_i >= len(df) or entry_i < 20:
+            stats["no_price"] += 1
+            continue
+        sh = shares_by_code.get(ev.Code)
+        sh = sh[sh.index <= ev.DiscDate] if sh is not None else None
+        if sh is None or sh.empty:
+            stats["out_of_universe"] += 1
+            continue
+        mcap = df["RawC"].iloc[entry_i - 1] * sh.iloc[-1]
+        if not (PRE_REGISTERED["min_mcap_yen"] <= mcap <= PRE_REGISTERED["max_mcap_yen"]):
+            stats["out_of_universe"] += 1
+            continue
+        turnover = (df["RawC"] * df["Vo"]).iloc[entry_i - 20: entry_i].mean()
+        if not turnover >= PRE_REGISTERED["min_turnover_yen"]:
+            stats["illiquid"] += 1
+            continue
+        # 保有期間が標本の終わりで切れるイベントは除外（上場廃止で途切れた銘柄は残す）
+        if entry_i + PRE_REGISTERED["max_hold"] > len(df) and df.index[-1] >= data_end:
+            stats["insufficient_window"] += 1
+            continue
+        t = simulate_trade(df, entry_i, ev.Code, ev.DiscDate.date())
+        if t:
+            trades.append(t)
+            busy_until[ev.Code] = pd.Timestamp(t.exit_date)
+    return trades, stats
+
+
+def cmd_backtest(use_holdout: bool) -> None:
+    bars, fins = load_bars(), load_fins()
+    print(f"データ: 株価 {bars['Date'].min().date()}〜{bars['Date'].max().date()} "
+          f"{bars['Code'].nunique()}銘柄 / 財務 {len(fins)}件 "
+          f"({fins['DiscDate'].min().date()}〜{fins['DiscDate'].max().date()})")
+    revisions, control = build_events(fins)
+    print(f"上方修正イベント(ユニバース判定前): {len(revisions)}件 / 全開示: {len(control)}件")
+    print(f"※{PRE_REGISTERED['data_note']}")
+    cut = date.fromisoformat(PRE_REGISTERED["holdout_from"])
+    ctrl_trades, ctrl_stats = run_events(control, bars, fins)
+    main_trades, main_stats = run_events(revisions, bars, fins)
+    print(f"  除外内訳 対照群: {ctrl_stats}")
+    print(f"  除外内訳 上方修正: {main_stats}")
+    # 対照群は比較用なのでホールドアウト使用の記録はしない。主仮説だけ記録する
+    ctrl_trades = [t for t in ctrl_trades if (t.signal_date >= cut) == use_holdout]
+    main_trades = split_holdout(main_trades, use_holdout)
+
+    phase = "ホールドアウト(最終確認)" if use_holdout else "検証期間"
+    ctrl = evaluate(ctrl_trades)
+    print()
+    print(format_report(f"{phase} 対照群: 全開示の翌日に買い", ctrl, judge=False))
+    print()
+    print(format_report(f"{phase} 上方修正+10%の翌日に買い", evaluate(main_trades, ctrl.get("ev"))))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -246,8 +513,8 @@ def cmd_selftest() -> None:
     assert t.reason == "time" and t.exit_date == idx[4].date() and abs(t.ret_pct - (10 - 0.6)) < 1e-9, t
     # 5) 判定
     ev = evaluate([Trade("X", date(2022, 1, 1), date(2022, 1, 2), date(2022, 2, 1), 100, 110, 10, "time"),
-                   Trade("Y", date(2023, 1, 1), date(2023, 1, 2), date(2023, 2, 1), 100, 95, -5, "stop")])
-    assert abs(ev["pf"] - 2.0) < 1e-9 and not ev["passed"], ev
+                   Trade("Y", date(2022, 8, 1), date(2022, 8, 2), date(2022, 9, 1), 100, 95, -5, "stop")])
+    assert abs(ev["pf"] - 2.0) < 1e-9 and not ev["passed"] and set(ev["by_period_pf"]) == {"2022H1", "2022H2"}, ev
     print("selftest OK: 損切り / ギャップ / ストップ安張り付き / 時間切れ / コスト / 判定")
 
 
@@ -257,5 +524,11 @@ if __name__ == "__main__":
         cmd_check()
     elif cmd == "selftest":
         cmd_selftest()
+    elif cmd == "build":
+        cmd_build()
+    elif cmd == "backtest":
+        cmd_backtest(use_holdout=False)
+    elif cmd == "final":
+        cmd_backtest(use_holdout=True)
     else:
         print(__doc__)
