@@ -4,9 +4,10 @@
 日本株スクリーニングツール
 ================================
 対象市場  : スタンダード・グロース（内国株式）
-時価総額  : 500 億円以下
+時価総額  : 500〜5000 億円
 戦略      : ミネルヴィニ SEPA型
 実行タイミング: 毎日 16:00（JST）自動実行 / --now オプションで即時実行
+フォワードテスト: 毎週金曜に実シグナルの成績と判定を通知 / --report で即時表示
 """
 
 import json
@@ -92,6 +93,11 @@ RESULTS_DIR = Path(__file__).parent / "results"
 # ポートフォリオ
 PORTFOLIO_FILE     = Path(__file__).parent / "portfolio.json"
 POSITION_MAX_DAYS  = 20   # 最大保有営業日数（超過で期間終了アラート）※ミネルヴィニ型は対象外
+
+# フォワードテスト判定基準（実シグナルの成績でエッジの有無を判定する）
+FORWARD_MIN_TRADES: int  = 30    # 判定に必要な決済済みシグナル数
+FORWARD_MIN_PF: float    = 1.3   # 継続判定に必要な PF
+FORWARD_REPORT_WEEKDAY: int = 4  # 週次レポートを送る曜日（0=月 … 4=金）
 
 # 資金管理（.env で設定。ACCOUNT_SIZE_YEN 未設定なら推奨株数は表示しない）
 ACCOUNT_SIZE_YEN: float    = float(os.getenv("ACCOUNT_SIZE_YEN", "0") or 0)
@@ -1070,6 +1076,107 @@ def build_performance_message(prev_date_str: str, performances: list[dict]) -> s
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# フォワードテスト（実シグナルの成績集計）
+# ──────────────────────────────────────────────────────────────────────────────
+def collect_forward_trades() -> list[dict]:
+    """results/*.json のミネルヴィニ型シグナルを、初期損切り→トレーリング20%→最大60営業日で
+    決済したと仮定して集計する。同一銘柄は前のシグナルが決済されるまで重複カウントしない。
+    売買したかどうかに関係なく、ルールどおりに執行した場合の成績を測る。"""
+    signals: list[tuple[str, dict]] = []
+    for path in sorted(RESULTS_DIR.glob("*.json")):
+        try:
+            sig_date = date.fromisoformat(path.stem)
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            continue
+        for r in data.get("strategies", {}).get("minervini", []):
+            if r.get("stop_loss") and r.get("entry_price"):
+                signals.append((sig_date.isoformat(), r))
+
+    trades: list[dict] = []
+    busy_until: dict[str, str] = {}   # code → 前回シグナルの決済日（未決済なら "9999"）
+    for sig_date, r in signals:
+        code = r["code"]
+        if busy_until.get(code, "") >= sig_date:
+            continue
+        entry, stop = float(r["entry_price"]), float(r["stop_loss"])
+        old_rule = bool(r.get("stop_capped")) or stop < entry * (1 - MINERVINI_MAX_STOP_PCT) - 1e-6
+        df = fetch_history(code + ".T", days=400)
+        if df is None or df.empty:
+            continue
+        after = df[df.index.date > date.fromisoformat(sig_date)]
+        window = after.iloc[:MINERVINI_MAX_HOLD]
+        trail = simulate_trailing_stop(window, date.fromisoformat(sig_date), stop)
+        if trail["exited"]:
+            status, exit_date, exit_price = "closed", trail["exit_date"], trail["exit_price"]
+        elif len(after) >= MINERVINI_MAX_HOLD:
+            status = "closed"
+            exit_date, exit_price = window.index[-1].date().isoformat(), float(window["Close"].iloc[-1])
+        else:
+            status, exit_date, exit_price = "open", None, float(df["Close"].iloc[-1])
+        busy_until[code] = exit_date or "9999"
+        ret = (exit_price - entry) / entry * 100
+        trades.append({
+            "code": code, "name": r.get("name") or code, "signal_date": sig_date,
+            "entry": entry, "stop": stop, "status": status, "exit_date": exit_date,
+            "ret_pct": ret, "r_mult": ret / ((entry - stop) / entry * 100) if entry > stop else float("nan"),
+            "old_rule": old_rule,
+        })
+    return trades
+
+
+def forward_stats(trades: list[dict]) -> dict:
+    rets = [t["ret_pct"] for t in trades]
+    wins, losses = [x for x in rets if x > 0], [x for x in rets if x <= 0]
+    streak = max_streak = 0
+    for x in rets:
+        streak = streak + 1 if x <= 0 else 0
+        max_streak = max(max_streak, streak)
+    return {
+        "n":          len(rets),
+        "win_rate":   len(wins) / len(rets) * 100 if rets else float("nan"),
+        "pf":         sum(wins) / -sum(losses) if losses and sum(losses) < 0 else float("inf") if wins else float("nan"),
+        "ev":         sum(rets) / len(rets) if rets else float("nan"),
+        "avg_r":      float(pd.Series([t["r_mult"] for t in trades]).mean()) if trades else float("nan"),
+        "max_losing_streak": max_streak,
+    }
+
+
+def build_forward_report(trades: list[dict]) -> str:
+    """フォワードテストの週次レポート（エッジ判定つき）。"""
+    closed = [t for t in trades if t["status"] == "closed" and not t["old_rule"]]
+    opened = [t for t in trades if t["status"] == "open" and not t["old_rule"]]
+    old    = [t for t in trades if t["status"] == "closed" and t["old_rule"]]
+    st = forward_stats(closed)
+    lines = [f"【SEPA型 フォワードテスト】 {_now_str()}",
+             f"判定基準: 決済{FORWARD_MIN_TRADES}件以上で PF≥{FORWARD_MIN_PF} かつ 期待値>0",
+             "─" * 24]
+    if st["n"]:
+        lines += [
+            f"決済済み: {st['n']}件  勝率 {st['win_rate']:.1f}%",
+            f"PF {st['pf']:.2f} / 期待値 {st['ev']:+.2f}% / 平均 {st['avg_r']:+.2f}R",
+            f"最大連敗: {st['max_losing_streak']}回",
+        ]
+    else:
+        lines.append("決済済み: 0件")
+    if st["n"] < FORWARD_MIN_TRADES:
+        verdict = f"⏳ 判定保留（あと{FORWARD_MIN_TRADES - st['n']}件）— 最小ロットで継続"
+    elif st["pf"] >= FORWARD_MIN_PF and st["ev"] > 0:
+        verdict = "✅ エッジ確認 — 資金配分の拡大を検討可"
+    else:
+        verdict = "❌ エッジ未確認 — 実弾停止・ルール見直し"
+    lines += ["", verdict]
+    if old:
+        so = forward_stats(old)
+        lines.append(f"(参考) 旧ルール(-15%キャップ)シグナル: {so['n']}件 PF {so['pf']:.2f} / 期待値 {so['ev']:+.2f}%")
+    if opened:
+        lines += ["", f"追跡中: {len(opened)}件"]
+        for t in sorted(opened, key=lambda t: t["signal_date"]):
+            lines.append(f"  {t['code']} {t['name'][:12]} {t['signal_date']} {t['ret_pct']:+.1f}%")
+    return "\n".join(lines)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # 需給情報取得（日本証券金融 taisyaku.jp CSV）
 # ──────────────────────────────────────────────────────────────────────────────
 _TAISYAKU_HEADERS = {
@@ -1683,6 +1790,13 @@ def run_screening(use_cache: bool = True) -> None:
         line_parts.append(msg)
         discord_parts.append(msg)
 
+    # ── 週次: フォワードテスト判定レポート ──
+    if date.today().weekday() == FORWARD_REPORT_WEEKDAY:
+        try:
+            line_parts.append(build_forward_report(collect_forward_trades()))
+        except Exception as e:
+            logger.warning(f"フォワードテストレポート作成失敗: {e}")
+
     if line_parts:
         combined = "\n\n" + "─" * 30 + "\n\n".join(line_parts)
         send_line_notify(combined)
@@ -1744,8 +1858,19 @@ if __name__ == "__main__":
         close_position(code, float(exit_price), result)
         sys.exit(0)
 
+    # ── フォワードテストレポート（通知せず表示のみ）──
+    if "--report" in sys.argv:
+        print(build_forward_report(collect_forward_trades()))
+        sys.exit(0)
+
     if "--now" in sys.argv or "-n" in sys.argv:
-        run_screening(use_cache=False)
+        try:
+            run_screening(use_cache=False)
+        except Exception as e:
+            # 途中で落ちたことに気づけるよう、原因を通知してから異常終了する
+            logger.exception("スクリーニング異常終了")
+            send_notify(f"【⚠️ スクリーナー異常終了】{_now_str()}\n{type(e).__name__}: {e}")
+            sys.exit(1)
     else:
         RUN_TIME = os.getenv("RUN_TIME", "16:00")
         if not re.fullmatch(r"\d{2}:\d{2}", RUN_TIME):
@@ -1755,7 +1880,14 @@ if __name__ == "__main__":
         logger.info(f"スケジューラー起動 — 毎日 {RUN_TIME} に実行")
         logger.info("即時実行したい場合: python stock_screener.py --now")
 
-        schedule.every().day.at(RUN_TIME).do(run_screening)
+        def _run_safely() -> None:
+            try:
+                run_screening()
+            except Exception as e:
+                logger.exception("スクリーニング異常終了")
+                send_notify(f"【⚠️ スクリーナー異常終了】{_now_str()}\n{type(e).__name__}: {e}")
+
+        schedule.every().day.at(RUN_TIME).do(_run_safely)
 
         while True:
             schedule.run_pending()
