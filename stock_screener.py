@@ -301,8 +301,14 @@ def fetch_history(ticker: str, days: int = 400) -> pd.DataFrame | None:
     # ── フォールバック: J-Quants ──
     if df is None and JQUANTS_API_KEY:
         jq = _fetch_history_jquants(code4, days=days)
+        # 無料プランは約12週間遅れのデータしか返らない。古いデータを「今日の株価」として
+        # 判定すると誤シグナルになるため、直近10日以内のデータがなければ使わない
         if jq is not None and len(jq) >= 200:
-            df = jq
+            stale_days = (datetime.now().date() - jq.index[-1].date()).days
+            if stale_days <= 10:
+                df = jq
+            else:
+                logger.debug(f"J-Quants データが{stale_days}日古いため不使用 ({ticker})")
 
     # ── キャッシュ保存（df のみ先に保存・market_cap は screen_ticker で追記）──
     if df is not None:
