@@ -24,6 +24,7 @@
   python smallcap_research.py volspike-final  # 仮説2のホールドアウト（1回だけ）
   python smallcap_research.py doublers     # 事実確認: 毎月2倍になる銘柄はあるか
   python smallcap_research.py features     # 特徴探索: 2倍になる直前の特徴のリフト（検証期間のみ）
+  python smallcap_research.py precursor    # 暴落済みボロ株の中で、ヨコヨコ・出来高が前触れになるか
 """
 
 import json, os, sys, time
@@ -734,6 +735,7 @@ FEATURE_BINS = {
     "20日騰落率(%)":          ("ret20",     [-np.inf, -20, -5, 5, 20, 50, np.inf]),
     "60日騰落率(%)":          ("ret60",     [-np.inf, -30, -10, 10, 30, 100, np.inf]),
     "20日値幅(%)":            ("range20",   [0, 10, 20, 40, 80, np.inf]),
+    "60日値幅(%)":            ("range60",   [0, 15, 25, 40, 80, np.inf]),
     "出来高5日/60日(倍)":      ("vol5_60",   [0, 0.5, 1, 2, 5, np.inf]),
     "当日出来高/20日平均(倍)":  ("vol_today", [0, 1, 2, 5, 10, np.inf]),
     "高値からの位置(%)":        ("from_high", [-np.inf, -70, -50, -30, -10, 0.01]),
@@ -765,6 +767,7 @@ def build_feature_table(bars: pd.DataFrame, fins: pd.DataFrame) -> pd.DataFrame:
         f["ret20"] = (c / c.shift(20) - 1) * 100
         f["ret60"] = (c / c.shift(60) - 1) * 100
         f["range20"] = (h.rolling(20).max() / g["Low"].rolling(20).min() - 1) * 100
+        f["range60"] = (h.rolling(60).max() / g["Low"].rolling(60).min() - 1) * 100
         f["vol5_60"] = vo.rolling(5).mean() / vo.rolling(60).mean()
         f["vol_today"] = vo / vo.shift(1).rolling(20).mean()
         f["from_high"] = (c / h.rolling(250, min_periods=60).max() - 1) * 100
@@ -854,6 +857,41 @@ def cmd_features() -> None:
         print(f"   リフト{lift:5.1f}倍  {rate:5.2f}%  ({k}/{n})  20日後 平均{fwd:+5.1f}%  {name}")
 
 
+PRECURSOR_UNIVERSE = {"max_price": 200, "max_from_high": -50}   # 暴落済みのボロ株（features の結果から）
+
+
+def cmd_precursor() -> None:
+    """暴落済みのボロ株の中で、ヨコヨコ（値幅が小さい）や出来高の変化が2倍の前触れになっているかを見る。"""
+    cut = pd.Timestamp(PRE_REGISTERED["holdout_from"])
+    u = PRECURSOR_UNIVERSE
+    t = build_feature_table(load_bars(), load_fins())
+    t = t[t["Date"] < cut]
+    all_base = t["target"].mean() * 100
+    uni = t[(t["price"] <= u["max_price"]) & (t["from_high"] <= u["max_from_high"])]
+    base = uni["target"].mean() * 100
+    print(f"探索データ: {t['Date'].min().date()}〜{t['Date'].max().date()}（ホールドアウト未使用）")
+    print(f"全銘柄の2倍確率: {all_base:.3f}%")
+    print(f"暴落済みボロ株（株価{u['max_price']}円以下・1年高値から{u['max_from_high']}%以下）: "
+          f"{len(uni)}断面 / {uni['Code'].nunique()}銘柄 / 2倍確率 {base:.2f}%（全体の{base/all_base:.1f}倍）"
+          f" / 20日後 平均{uni['fwd_ret'].mean():+.1f}% 中央値{uni['fwd_ret'].median():+.1f}%")
+    print("以下のリフトは『暴落済みボロ株の中での』2倍確率 ÷ 暴落済みボロ株全体の2倍確率")
+    for label in ("20日値幅(%)", "60日値幅(%)", "出来高5日/60日(倍)", "当日出来高/20日平均(倍)", "20日騰落率(%)"):
+        col, edges = FEATURE_BINS[label]
+        print()
+        print("\n".join(_lift_table(uni, base, label, col, edges)))
+    # 底でヨコヨコ（60日値幅が小さい）× 出来高の増え方
+    print("\n■ 60日値幅 × 出来高5日/60日（暴落済みボロ株の中）")
+    x = uni.dropna(subset=["range60", "vol5_60"])
+    key = [pd.cut(x["range60"], [0, 25, 40, np.inf], right=False),
+           pd.cut(x["vol5_60"], [0, 1, 2, np.inf], right=False)]
+    for (ra, vb), grp in x.groupby(key, observed=True):
+        if len(grp) < FEATURE_CFG["min_bucket"]:
+            continue
+        rate = grp["target"].mean() * 100
+        print(f"   60日値幅{str(ra):<14} 出来高{str(vb):<12} {len(grp):>6}件  2倍 {rate:5.2f}%"
+              f"  リフト{rate/base:4.1f}倍  20日後 平均{grp['fwd_ret'].mean():+5.1f}% 中央値{grp['fwd_ret'].median():+5.1f}%")
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 動作確認（データ不要）
 # ──────────────────────────────────────────────────────────────────────────────
@@ -903,5 +941,7 @@ if __name__ == "__main__":
         cmd_doublers()
     elif cmd == "features":
         cmd_features()
+    elif cmd == "precursor":
+        cmd_precursor()
     else:
         print(__doc__)
