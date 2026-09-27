@@ -77,11 +77,10 @@ PRE_REGISTERED_VOLSPIKE = {
     "vol_mult":         5.0,
     "max_price_yen":    400,
     "entry":            "検出日の高値",
-    "win_pct":          0.10,                # 勝ち: 1週間以内に高値が買値+10%以上
-    "window_days":      5,                   # 1週間 = 翌営業日から5営業日
+    "win_pct":          0.10,                # 利確: 1週間以内に買値+10%（指値）
+    "stop_pcts":        [0.10, 0.15],        # 損切り: ユーザー指定の2通りを両方検証
+    "window_days":      5,                   # 1週間 = 翌営業日から5営業日。届かなければ5日目終値
     "control_sample":   20_000,
-    # 判定用（本人の定義の「勝ち」だけでは損失を測れないため、±10%の先着で損益を出す）
-    "bracket_pct":      0.10,
 }
 
 
@@ -536,39 +535,42 @@ def _volspike_flags(g: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
 
 
 def measure_signal(g: pd.DataFrame, i: int, code: str) -> dict | None:
-    """検出日 i の高値で買った場合の、1週間の値動きを測る。"""
+    """検出日 i の高値で買い、+10%利確 / 損切り(複数) / 5営業日目終値 のどれかで決済した結果を測る。"""
     cfg = PRE_REGISTERED_VOLSPIKE
     w = cfg["window_days"]
     o, h, l, c = (g[k].to_numpy(float) for k in ("Open", "High", "Low", "Close"))
     if i + 1 >= len(g):
         return None
     entry = h[i]
-    up, dn = entry * (1 + cfg["bracket_pct"]), entry * (1 - cfg["bracket_pct"])
+    up = entry * (1 + cfg["win_pct"])
     last = min(i + w, len(g) - 1)
-    # 本人の定義: 1週間以内に高値が買値+10%以上なら勝ち
-    user_win = bool((h[i + 1: last + 1] >= entry * (1 + cfg["win_pct"])).any())
-    # ±10%のどちらに先に届くか（同じ日に両方なら安全側で損失扱い）。どちらもなければ最終日終値
-    exit_px, first, exit_i = c[last], "none", last
-    for j in range(i + 1, last + 1):
-        if o[j] <= dn:
-            exit_px, first, exit_i = o[j], "down", j
-            break
-        if o[j] >= up:
-            exit_px, first, exit_i = o[j], "up", j
-            break
-        if l[j] <= dn:
-            exit_px, first, exit_i = dn, "down", j
-            break
-        if h[j] >= up:
-            exit_px, first, exit_i = up, "up", j
-            break
-    ret = (exit_px / entry - 1) * 100 - cfg["cost_round_trip"]
     d = g.index
-    return {"code": code, "date": d[i].date(), "user_win": user_win, "first": first,
-            "gap_over_high": bool(o[i + 1] > entry),          # 翌朝、検出日の高値より上で寄った
+    trades: dict[float, Trade] = {}
+    for sp in cfg["stop_pcts"]:
+        dn = entry * (1 - sp)
+        # 同じ日に利確と損切りの両方に届いたら、順番が分からないので安全側で損切り扱い
+        exit_px, reason, exit_i = c[last], "time", last
+        for j in range(i + 1, last + 1):
+            if o[j] <= dn:
+                exit_px, reason, exit_i = o[j], "gap_stop", j
+                break
+            if o[j] >= up:
+                exit_px, reason, exit_i = o[j], "gap_take", j
+                break
+            if l[j] <= dn:
+                exit_px, reason, exit_i = dn, "stop", j
+                break
+            if h[j] >= up:
+                exit_px, reason, exit_i = up, "take", j
+                break
+        ret = (exit_px / entry - 1) * 100 - cfg["cost_round_trip"]
+        trades[sp] = Trade(code, d[i].date(), d[i].date(), d[exit_i].date(),
+                           float(entry), float(exit_px), float(ret), reason)
+    return {"code": code, "date": d[i].date(),
+            "user_win": bool((h[i + 1: last + 1] >= up).any()),   # 途中の下落を問わず+10%に届いたか
+            "gap_over_high": bool(o[i + 1] > entry),              # 翌朝、検出日の高値より上で寄った
             "close5_ret": (c[last] / entry - 1) * 100,
-            "trade": Trade(code, d[i].date(), d[i].date(), d[exit_i].date(), float(entry),
-                           float(exit_px), float(ret), first)}
+            "trades": trades}
 
 
 def build_volspike_samples(bars: pd.DataFrame) -> tuple[list[dict], list[dict], list[dict]]:
@@ -612,11 +614,8 @@ def _describe(name: str, ms: list[dict]) -> str:
         return f"  {name}: 0件"
     n = len(ms)
     win = sum(m["user_win"] for m in ms) / n * 100
-    up = sum(m["first"] == "up" for m in ms) / n * 100
-    dn = sum(m["first"] == "down" for m in ms) / n * 100
     med = float(np.median([m["close5_ret"] for m in ms]))
-    return (f"  {name}: {n}件 / 勝ち(1週間で+10%到達) {win:.1f}% / "
-            f"先に+10% {up:.1f}% ・先に-10% {dn:.1f}% / 1週間後終値 中央値{med:+.1f}%")
+    return f"  {name}: {n}件 / 1週間以内に+10%到達 {win:.1f}% / 1週間後終値 中央値{med:+.1f}%"
 
 
 def cmd_volspike(use_holdout: bool) -> None:
@@ -624,14 +623,17 @@ def cmd_volspike(use_holdout: bool) -> None:
     bars = load_bars()
     print(f"データ: 株価 {bars['Date'].min().date()}〜{bars['Date'].max().date()} {bars['Code'].nunique()}銘柄")
     print(f"仮説: {cfg['signal']}")
-    print(f"買値: {cfg['entry']} / 勝ち: {cfg['window_days']}営業日以内に高値が買値+{cfg['win_pct']*100:.0f}%以上")
+    print(f"買値: {cfg['entry']} / 利確: {cfg['window_days']}営業日以内に+{cfg['win_pct']*100:.0f}% / "
+          f"損切り: {' と '.join(f'-{x*100:.0f}%' for x in cfg['stop_pcts'])} / 届かなければ{cfg['window_days']}営業日目の終値")
     print(f"※{cfg['data_note']}")
     sig, ctrl_a, ctrl_b = build_volspike_samples(bars)
 
     cut = date.fromisoformat(cfg["holdout_from"])
     keep = (lambda m: m["date"] >= cut) if use_holdout else (lambda m: m["date"] < cut)
     ctrl_a, ctrl_b = [m for m in ctrl_a if keep(m)], [m for m in ctrl_b if keep(m)]
-    kept = {(t.ticker, t.signal_date) for t in split_holdout([m["trade"] for m in sig], use_holdout, "volspike")}
+    first_stop = cfg["stop_pcts"][0]
+    kept = {(t.ticker, t.signal_date)
+            for t in split_holdout([m["trades"][first_stop] for m in sig], use_holdout, "volspike")}
     sig = [m for m in sig if (m["code"], m["date"]) in kept]
 
     phase = "ホールドアウト(最終確認)" if use_holdout else "検証期間"
@@ -643,11 +645,14 @@ def cmd_volspike(use_holdout: bool) -> None:
         gap = sum(m["gap_over_high"] for m in sig) / len(sig) * 100
         print(f"  翌朝、検出日の高値より上で寄った割合: {gap:.1f}%（その分は高値では買えない）")
 
-    ctrl_ev = evaluate([m["trade"] for m in ctrl_a])
-    print()
-    print(format_report(f"{phase} 損益で判定: 検出日高値で買い→±10%の先着 or 1週間後終値",
-                        evaluate([m["trade"] for m in sig], ctrl_ev.get("ev"))))
-    print(f"  (対照群Aの同じ売買: 期待値 {ctrl_ev.get('ev', float('nan')):+.2f}% / PF {ctrl_ev.get('pf', float('nan')):.2f})")
+    for sp in cfg["stop_pcts"]:
+        ctrl_ev = evaluate([m["trades"][sp] for m in ctrl_a])
+        print()
+        print(format_report(f"{phase} 損切り-{sp*100:.0f}%: 検出日高値で買い→+10%利確 / 損切り / 1週間後終値",
+                            evaluate([m["trades"][sp] for m in sig], ctrl_ev.get("ev"))))
+        print(f"  (対照群Aの同じ売買: 期待値 {ctrl_ev.get('ev', float('nan')):+.2f}% / "
+              f"PF {ctrl_ev.get('pf', float('nan')):.2f})")
+    print("\n※損切り2通りを試しているため、片方だけ合格した場合は偶然の可能性を割り引いて見ること")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
