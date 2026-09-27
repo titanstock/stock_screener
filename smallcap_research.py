@@ -25,6 +25,8 @@
   python smallcap_research.py doublers     # 事実確認: 毎月2倍になる銘柄はあるか
   python smallcap_research.py features     # 特徴探索: 2倍になる直前の特徴のリフト（検証期間のみ）
   python smallcap_research.py precursor    # 暴落済みボロ株の中で、ヨコヨコ・出来高が前触れになるか
+  python smallcap_research.py crashed      # 仮説3: 暴落済みボロ株を20営業日保有（検証期間）
+  python smallcap_research.py crashed-final  # 仮説3のホールドアウト（1回だけ）
 """
 
 import json, os, sys, time
@@ -84,6 +86,21 @@ PRE_REGISTERED_VOLSPIKE = {
     "stop_pcts":        [0.10, 0.15],        # 損切り: ユーザー指定の2通りを両方検証
     "window_days":      5,                   # 1週間 = 翌営業日から5営業日。届かなければ5日目終値
     "control_sample":   20_000,
+}
+
+
+# 仮説3（features の探索結果から。2026-09-27 ユーザー承認で固定）:
+# 大きく売り込まれた超低位株は2倍になる確率が全体の約15倍。少額分散で20営業日持てば期待値がプラスか。
+PRE_REGISTERED_CRASHED = {
+    **PRE_REGISTERED,
+    "signal":           "株価200円以下（大引け）かつ 過去1年(250営業日)の高値から-50%以下 → 翌営業日の始値で買い",
+    "max_price_yen":    200,
+    "max_from_high":    -50.0,
+    "stop_pct":         1.0,                 # 損切りなし（少額分散で管理）
+    "max_hold":         20,                  # 20営業日目の終値で手仕舞い
+    "cost_round_trip":  2.0,                 # 超低位株は1円の刻みが大きいため往復2%
+    "cap_ret_pct":      300.0,               # 1回の上昇は+300%で打ち切って評価（データ異常値対策）
+    "control_sample":   20_000,              # 対照群: 全銘柄の無作為な日に同じ売買
 }
 
 
@@ -257,12 +274,12 @@ def evaluate(trades: list[Trade], control_ev: float | None = None) -> dict:
             "control_ev": control_ev, "passed": passed}
 
 
-def format_report(title: str, ev: dict, judge: bool = True) -> str:
+def format_report(title: str, ev: dict, judge: bool = True, cost: float | None = None) -> str:
     if ev["n"] == 0:
         return f"【{title}】シグナル0件"
     per = "  ".join(f"{p}:{v:.2f}" for p, v in ev["by_period_pf"].items())
     lines = [
-        f"【{title}】（コスト{PRE_REGISTERED['cost_round_trip']}%控除後）",
+        f"【{title}】（コスト{PRE_REGISTERED['cost_round_trip'] if cost is None else cost}%控除後）",
         f"件数 {ev['n']} / 勝率 {ev['win_rate']:.1f}% / PF {ev['pf']:.2f} / 期待値 {ev['ev']:+.2f}%"
         f" / 中央値 {ev['median']:+.2f}% / 最悪 {ev['worst']:+.1f}%",
         f"半期別PF: {per}",
@@ -892,6 +909,85 @@ def cmd_precursor() -> None:
               f"  リフト{rate/base:4.1f}倍  20日後 平均{grp['fwd_ret'].mean():+5.1f}% 中央値{grp['fwd_ret'].median():+5.1f}%")
 
 
+def _crashed_trades(bars: pd.DataFrame, control: bool) -> tuple[list[Trade], dict]:
+    """シグナル（または対照群の無作為な日）ごとに、翌営業日始値で買い20営業日目終値で売る。
+    同じ銘柄は手仕舞うまで重複して買わない。"""
+    cfg = PRE_REGISTERED_CRASHED
+    hold = cfg["max_hold"]
+    data_end = bars["Date"].max()
+    rng = np.random.default_rng(0)
+    stats = {"signals": 0, "insufficient_window": 0, "duplicate": 0}
+    cand: list[tuple[str, int]] = []
+    groups = {}
+    for code, g in bars.groupby("Code"):
+        g = g.set_index("Date")
+        groups[code] = g
+        n = len(g)
+        ok = np.arange(n) + 1 < n
+        if control:
+            cand += [(code, i) for i in np.flatnonzero(ok & (np.arange(n) >= 60))]
+            continue
+        from_high = (g["Close"] / g["High"].rolling(250, min_periods=60).max() - 1) * 100
+        hit = (g["RawC"] <= cfg["max_price_yen"]) & (from_high <= cfg["max_from_high"])
+        cand += [(code, i) for i in np.flatnonzero(hit.to_numpy() & ok)]
+    if control:
+        pick = rng.choice(len(cand), size=min(cfg["control_sample"], len(cand)), replace=False)
+        cand = sorted(cand[k] for k in pick)
+    stats["signals"] = len(cand)
+    trades: list[Trade] = []
+    busy: dict[str, int] = {}
+    for code, i in cand:
+        g = groups[code]
+        if i <= busy.get(code, -1):
+            stats["duplicate"] += 1
+            continue
+        if i + hold >= len(g) and g.index[-1] >= data_end:
+            stats["insufficient_window"] += 1       # 標本の終わりで切れる（上場廃止で途切れた銘柄は残す）
+            continue
+        t = simulate_trade(g, i + 1, code, g.index[i].date(), stop_pct=cfg["stop_pct"],
+                           max_hold=hold, cost_pct=cfg["cost_round_trip"])
+        if t:
+            busy[code] = i + hold
+            trades.append(t)
+    return trades, stats
+
+
+def _cap(trades: list[Trade]) -> list[Trade]:
+    cap = PRE_REGISTERED_CRASHED["cap_ret_pct"]
+    return [Trade(**{**t.__dict__, "ret_pct": min(t.ret_pct, cap)}) for t in trades]
+
+
+def cmd_crashed(use_holdout: bool) -> None:
+    cfg = PRE_REGISTERED_CRASHED
+    bars = load_bars()
+    print(f"データ: 株価 {bars['Date'].min().date()}〜{bars['Date'].max().date()} {bars['Code'].nunique()}銘柄")
+    print(f"仮説: {cfg['signal']}")
+    print(f"決済: 損切りなし / {cfg['max_hold']}営業日目の終値 / コスト往復{cfg['cost_round_trip']}% / "
+          f"1回の上昇は+{cfg['cap_ret_pct']:.0f}%で打ち切り")
+    print(f"※{cfg['data_note']}")
+    main, main_stats = _crashed_trades(bars, control=False)
+    ctrl, ctrl_stats = _crashed_trades(bars, control=True)
+    print(f"  シグナル: {main_stats}")
+    print(f"  対照群(全銘柄の無作為な日): {ctrl_stats}")
+
+    cut = date.fromisoformat(cfg["holdout_from"])
+    ctrl = [t for t in ctrl if (t.signal_date >= cut) == use_holdout]
+    main = split_holdout(main, use_holdout, "crashed")
+    phase = "ホールドアウト(最終確認)" if use_holdout else "検証期間"
+    ctrl_ev = evaluate(_cap(ctrl))
+    raw = np.array([t.ret_pct for t in main])
+    print()
+    cost = cfg["cost_round_trip"]
+    print(format_report(f"{phase} 対照群: 全銘柄の無作為な日に買い", ctrl_ev, judge=False, cost=cost))
+    print()
+    print(format_report(f"{phase} 暴落済みボロ株を買って20営業日保有", evaluate(_cap(main), ctrl_ev.get("ev")),
+                        cost=cost))
+    if len(raw):
+        print(f"  打ち切りなしの期待値 {raw.mean():+.2f}% / +100%以上の当たり {(raw >= 100).sum()}回"
+              f"（{(raw >= 100).mean()*100:.1f}%） / -50%以下 {(raw <= -50).sum()}回 / "
+              f"上位5回を除いた期待値 {np.sort(raw)[:-5].mean() if len(raw) > 5 else float('nan'):+.2f}%")
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 動作確認（データ不要）
 # ──────────────────────────────────────────────────────────────────────────────
@@ -943,5 +1039,9 @@ if __name__ == "__main__":
         cmd_features()
     elif cmd == "precursor":
         cmd_precursor()
+    elif cmd == "crashed":
+        cmd_crashed(use_holdout=False)
+    elif cmd == "crashed-final":
+        cmd_crashed(use_holdout=True)
     else:
         print(__doc__)
