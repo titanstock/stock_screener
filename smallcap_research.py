@@ -65,21 +65,23 @@ PRE_REGISTERED = {
 }
 
 
-# 仮説2（ユーザーの観察）: 小型株が一定期間ヨコヨコのあと、出来高が突然膨らむと、
-# その日〜翌日に一気に上がる。シグナルが分かるのは当日の大引け後なので、買えるのは翌日始値から。
-# 結果を見る前に定義を固定する。条件の数値は変えず、変えるなら別仮説として扱う。
+# 仮説2（ユーザーの観察）: 低位株が一定期間ヨコヨコのあと出来高が突然膨らむと、
+# その日〜1週間で一気に上がる。売買判断は本人が行うため、ツールは「この形に優位性があるか」だけを測る。
+# 定義はユーザー指定（2026-09-27）。結果を見たあとに数値を変えるなら別仮説として扱う。
 PRE_REGISTERED_VOLSPIKE = {
     **PRE_REGISTERED,
-    "signal":           "直近20日(当日除く)の高値/安値-1 ≤15% のヨコヨコで、当日出来高 ≥ 直近20日平均の5倍、"
-                        "かつ当日終値が前日終値より高い → 翌営業日の始値で買い",
+    "signal":           "直近20日(当日除く)の高値/安値-1 ≤10% のヨコヨコで、当日出来高 ≥ 直近20日平均の5倍。"
+                        "株価400円以下（検出日の終値）",
     "flat_days":        20,
-    "flat_range_max":   0.15,
+    "flat_range_max":   0.10,
     "vol_mult":         5.0,
-    "min_turnover_yen": 10_000_000,          # 出来高急増の前（当日除く20日平均）で判定
-    "turnover_before_signal": True,
-    "stop_pct":         0.10,
-    "max_hold":         5,                   # 「一気に上がる」短期の動きを検証
-    "control_sample":   20_000,              # 対照群: 同ユニバースの無作為な日に買い
+    "max_price_yen":    400,
+    "entry":            "検出日の高値",
+    "win_pct":          0.10,                # 勝ち: 1週間以内に高値が買値+10%以上
+    "window_days":      5,                   # 1週間 = 翌営業日から5営業日
+    "control_sample":   20_000,
+    # 判定用（本人の定義の「勝ち」だけでは損失を測れないため、±10%の先着で損益を出す）
+    "bracket_pct":      0.10,
 }
 
 
@@ -520,63 +522,132 @@ def cmd_backtest(use_holdout: bool) -> None:
     print(format_report(f"{phase} 上方修正+10%の翌日に買い", evaluate(main_trades, ctrl.get("ev"))))
 
 
-def build_volspike_events(bars: pd.DataFrame) -> pd.DataFrame:
-    """ヨコヨコ後の出来高急増（上昇引け）の日を返す。DiscDate=シグナル日（大引け後に判明）。"""
-    cfg, out = PRE_REGISTERED_VOLSPIKE, []
+def _volspike_flags(g: pd.DataFrame) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """(ヨコヨコ, 出来高急増, 株価条件) の日次フラグ。g は Date インデックスの1銘柄分。"""
+    cfg = PRE_REGISTERED_VOLSPIKE
     n = cfg["flat_days"]
+    hi = g["High"].shift(1).rolling(n).max()
+    lo = g["Low"].shift(1).rolling(n).min()
+    avg_vo = g["Vo"].shift(1).rolling(n).mean()
+    flat = hi / lo - 1 <= cfg["flat_range_max"]
+    spike = (avg_vo > 0) & (g["Vo"] >= avg_vo * cfg["vol_mult"])
+    cheap = g["RawC"] <= cfg["max_price_yen"]
+    return flat, spike, cheap
+
+
+def measure_signal(g: pd.DataFrame, i: int, code: str) -> dict | None:
+    """検出日 i の高値で買った場合の、1週間の値動きを測る。"""
+    cfg = PRE_REGISTERED_VOLSPIKE
+    w = cfg["window_days"]
+    o, h, l, c = (g[k].to_numpy(float) for k in ("Open", "High", "Low", "Close"))
+    if i + 1 >= len(g):
+        return None
+    entry = h[i]
+    up, dn = entry * (1 + cfg["bracket_pct"]), entry * (1 - cfg["bracket_pct"])
+    last = min(i + w, len(g) - 1)
+    # 本人の定義: 1週間以内に高値が買値+10%以上なら勝ち
+    user_win = bool((h[i + 1: last + 1] >= entry * (1 + cfg["win_pct"])).any())
+    # ±10%のどちらに先に届くか（同じ日に両方なら安全側で損失扱い）。どちらもなければ最終日終値
+    exit_px, first, exit_i = c[last], "none", last
+    for j in range(i + 1, last + 1):
+        if o[j] <= dn:
+            exit_px, first, exit_i = o[j], "down", j
+            break
+        if o[j] >= up:
+            exit_px, first, exit_i = o[j], "up", j
+            break
+        if l[j] <= dn:
+            exit_px, first, exit_i = dn, "down", j
+            break
+        if h[j] >= up:
+            exit_px, first, exit_i = up, "up", j
+            break
+    ret = (exit_px / entry - 1) * 100 - cfg["cost_round_trip"]
+    d = g.index
+    return {"code": code, "date": d[i].date(), "user_win": user_win, "first": first,
+            "gap_over_high": bool(o[i + 1] > entry),          # 翌朝、検出日の高値より上で寄った
+            "close5_ret": (c[last] / entry - 1) * 100,
+            "trade": Trade(code, d[i].date(), d[i].date(), d[exit_i].date(), float(entry),
+                           float(exit_px), float(ret), first)}
+
+
+def build_volspike_samples(bars: pd.DataFrame) -> tuple[list[dict], list[dict], list[dict]]:
+    """(シグナル, 対照群A=低位株の無作為な日, 対照群B=ヨコヨコだが出来高急増なし) を測る。"""
+    cfg = PRE_REGISTERED_VOLSPIKE
+    w = cfg["window_days"]
+    data_end = bars["Date"].max()
+    rng = np.random.default_rng(0)
+    sig, pool_a, pool_b = [], [], []
+    groups = {}
     for code, g in bars.groupby("Code"):
         g = g.set_index("Date")
-        hi = g["High"].shift(1).rolling(n).max()
-        lo = g["Low"].shift(1).rolling(n).min()
-        avg_vo = g["Vo"].shift(1).rolling(n).mean()
-        prev_c = g["Close"].shift(1)
-        hit = ((hi / lo - 1 <= cfg["flat_range_max"]) & (avg_vo > 0)
-               & (g["Vo"] >= avg_vo * cfg["vol_mult"]) & (g["Close"] > prev_c))
-        if hit.any():
-            nxt_open = g["Open"].shift(-1)
-            sub = g[hit]
-            out.append(pd.DataFrame({
-                "Code": code, "DiscDate": sub.index,
-                "day_ret": (sub["Close"] / prev_c[hit] - 1).to_numpy() * 100,        # 当日の上昇（買えない）
-                "gap": (nxt_open[hit] / sub["Close"] - 1).to_numpy() * 100,           # 翌朝のギャップ（買えない）
-            }))
-    return pd.concat(out, ignore_index=True) if out else pd.DataFrame(columns=["Code", "DiscDate", "day_ret", "gap"])
+        groups[code] = g
+        flat, spike, cheap = _volspike_flags(g)
+        n = len(g)
+        # 1週間の値動きが標本の終わりで切れる日は除外（上場廃止で途切れた銘柄は残す）
+        ok = np.arange(n) + w < n
+        if g.index[-1] < data_end:
+            ok = np.arange(n) + 1 < n
+        busy = -1
+        for i in np.flatnonzero((flat & spike & cheap).to_numpy() & ok):
+            if i <= busy:
+                continue                                    # 同じ銘柄の1週間以内の重複は除外
+            m = measure_signal(g, i, code)
+            if m:
+                sig.append(m)
+                busy = i + w
+        pool_a += [(code, i) for i in np.flatnonzero(cheap.to_numpy() & ok)]
+        pool_b += [(code, i) for i in np.flatnonzero((flat & ~spike & cheap).to_numpy() & ok)]
+
+    def sample(pool):
+        if not pool:
+            return []
+        idx = rng.choice(len(pool), size=min(cfg["control_sample"], len(pool)), replace=False)
+        return [m for k in idx if (m := measure_signal(groups[pool[k][0]], pool[k][1], pool[k][0]))]
+    return sig, sample(pool_a), sample(pool_b)
+
+
+def _describe(name: str, ms: list[dict]) -> str:
+    if not ms:
+        return f"  {name}: 0件"
+    n = len(ms)
+    win = sum(m["user_win"] for m in ms) / n * 100
+    up = sum(m["first"] == "up" for m in ms) / n * 100
+    dn = sum(m["first"] == "down" for m in ms) / n * 100
+    med = float(np.median([m["close5_ret"] for m in ms]))
+    return (f"  {name}: {n}件 / 勝ち(1週間で+10%到達) {win:.1f}% / "
+            f"先に+10% {up:.1f}% ・先に-10% {dn:.1f}% / 1週間後終値 中央値{med:+.1f}%")
 
 
 def cmd_volspike(use_holdout: bool) -> None:
     cfg = PRE_REGISTERED_VOLSPIKE
-    bars, fins = load_bars(), load_fins()
+    bars = load_bars()
     print(f"データ: 株価 {bars['Date'].min().date()}〜{bars['Date'].max().date()} {bars['Code'].nunique()}銘柄")
     print(f"仮説: {cfg['signal']}")
-    print(f"決済: 損切り-{cfg['stop_pct']*100:.0f}% / 最大{cfg['max_hold']}営業日 / コスト往復{cfg['cost_round_trip']}%")
+    print(f"買値: {cfg['entry']} / 勝ち: {cfg['window_days']}営業日以内に高値が買値+{cfg['win_pct']*100:.0f}%以上")
     print(f"※{cfg['data_note']}")
-    events = build_volspike_events(bars)
-    rng = np.random.default_rng(0)
-    pick = rng.choice(len(bars), size=min(cfg["control_sample"], len(bars)), replace=False)
-    control = bars.iloc[pick][["Code", "Date"]].rename(columns={"Date": "DiscDate"})
-
-    main_trades, main_stats = run_events(events, bars, fins, cfg)
-    ctrl_trades, ctrl_stats = run_events(control, bars, fins, cfg)
-    print(f"出来高急増シグナル(ユニバース判定前): {len(events)}件")
-    print(f"  除外内訳 シグナル: {main_stats}")
-    print(f"  除外内訳 対照群: {ctrl_stats}")
-
-    # 買う前に終わってしまう値動き（当日の上昇・翌朝のギャップ）を実際に売買した銘柄で集計
-    traded = {(t.ticker, t.signal_date) for t in main_trades}
-    ev = events[[(c, d.date()) in traded for c, d in zip(events["Code"], events["DiscDate"])]]
-    if len(ev):
-        print(f"  買えない部分: シグナル当日の上昇 中央値{ev['day_ret'].median():+.1f}% / "
-              f"翌朝ギャップ 中央値{ev['gap'].median():+.1f}%（平均{ev['gap'].mean():+.1f}%）")
+    sig, ctrl_a, ctrl_b = build_volspike_samples(bars)
 
     cut = date.fromisoformat(cfg["holdout_from"])
-    ctrl_trades = [t for t in ctrl_trades if (t.signal_date >= cut) == use_holdout]
-    main_trades = split_holdout(main_trades, use_holdout, "volspike")
+    keep = (lambda m: m["date"] >= cut) if use_holdout else (lambda m: m["date"] < cut)
+    ctrl_a, ctrl_b = [m for m in ctrl_a if keep(m)], [m for m in ctrl_b if keep(m)]
+    kept = {(t.ticker, t.signal_date) for t in split_holdout([m["trade"] for m in sig], use_holdout, "volspike")}
+    sig = [m for m in sig if (m["code"], m["date"]) in kept]
+
     phase = "ホールドアウト(最終確認)" if use_holdout else "検証期間"
-    ctrl = evaluate(ctrl_trades)
+    print(f"\n【{phase} あなたの定義での勝率】")
+    print(_describe("シグナル(ヨコヨコ→出来高5倍)", sig))
+    print(_describe("対照群A(400円以下の無作為な日)", ctrl_a))
+    print(_describe("対照群B(ヨコヨコだが出来高急増なし)", ctrl_b))
+    if sig:
+        gap = sum(m["gap_over_high"] for m in sig) / len(sig) * 100
+        print(f"  翌朝、検出日の高値より上で寄った割合: {gap:.1f}%（その分は高値では買えない）")
+
+    ctrl_ev = evaluate([m["trade"] for m in ctrl_a])
     print()
-    print(format_report(f"{phase} 対照群: 無作為な日に買い", ctrl, judge=False))
-    print()
-    print(format_report(f"{phase} ヨコヨコ→出来高急増の翌日に買い", evaluate(main_trades, ctrl.get("ev"))))
+    print(format_report(f"{phase} 損益で判定: 検出日高値で買い→±10%の先着 or 1週間後終値",
+                        evaluate([m["trade"] for m in sig], ctrl_ev.get("ev"))))
+    print(f"  (対照群Aの同じ売買: 期待値 {ctrl_ev.get('ev', float('nan')):+.2f}% / PF {ctrl_ev.get('pf', float('nan')):.2f})")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
