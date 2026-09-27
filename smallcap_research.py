@@ -23,6 +23,7 @@
   python smallcap_research.py volspike     # 仮説2: ヨコヨコ→出来高急増 を検証期間で判定
   python smallcap_research.py volspike-final  # 仮説2のホールドアウト（1回だけ）
   python smallcap_research.py doublers     # 事実確認: 毎月2倍になる銘柄はあるか
+  python smallcap_research.py features     # 特徴探索: 2倍になる直前の特徴のリフト（検証期間のみ）
 """
 
 import json, os, sys, time
@@ -717,6 +718,143 @@ def cmd_doublers() -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# 7. 特徴探索: 2倍になる直前の銘柄に共通する特徴は、他の銘柄より何倍起きやすいか
+# ──────────────────────────────────────────────────────────────────────────────
+FEATURE_CFG = {
+    "horizon":     20,      # 翌営業日の始値から20営業日（約1か月）以内に
+    "multiple":    2.0,     # 高値が2倍に届いたら「2倍銘柄」
+    "step":        5,       # 5営業日ごとの断面で集計（毎日だと同じ上昇を何度も数えるため）
+    "min_bucket":  300,     # これより少ない区分は偶然が大きいので表示しない
+}
+
+FEATURE_BINS = {
+    "株価(円)":              ("price",     [0, 100, 200, 400, 1000, np.inf]),
+    "時価総額(億円)":         ("mcap_oku",  [0, 20, 50, 100, 300, 1000, np.inf]),
+    "売買代金20日平均(万円)":  ("turn_man",  [0, 100, 500, 2000, 10000, np.inf]),
+    "20日騰落率(%)":          ("ret20",     [-np.inf, -20, -5, 5, 20, 50, np.inf]),
+    "60日騰落率(%)":          ("ret60",     [-np.inf, -30, -10, 10, 30, 100, np.inf]),
+    "20日値幅(%)":            ("range20",   [0, 10, 20, 40, 80, np.inf]),
+    "出来高5日/60日(倍)":      ("vol5_60",   [0, 0.5, 1, 2, 5, np.inf]),
+    "当日出来高/20日平均(倍)":  ("vol_today", [0, 1, 2, 5, 10, np.inf]),
+    "高値からの位置(%)":        ("from_high", [-np.inf, -70, -50, -30, -10, 0.01]),
+    "日次変動率20日(%)":        ("vola20",    [0, 2, 4, 6, 10, np.inf]),
+    "直近20日の上方修正":       ("revised20", [-0.5, 0.5, 1.5]),
+    "営業利益予想が赤字":       ("loss_fc",   [-0.5, 0.5, 1.5]),
+}
+
+
+def build_feature_table(bars: pd.DataFrame, fins: pd.DataFrame) -> pd.DataFrame:
+    """断面ごとの特徴（その日の大引けまでの情報だけ）と、その後に2倍になったかを作る。"""
+    cfg = FEATURE_CFG
+    hz = cfg["horizon"]
+    revisions, _ = build_events(fins)
+    rev_by_code = {c: g["DiscDate"].sort_values().to_numpy() for c, g in revisions.groupby("Code")}
+    fc = pd.DataFrame({"Code": fins["Code"], "DiscDate": fins["DiscDate"],
+                       "fc": _pick(fins, "FOP").fillna(_pick(fins, "FNCOP")), "shares": fins["shares"]})
+    fc_by_code = {c: g.sort_values("DiscDate") for c, g in fc.groupby("Code")}
+    out = []
+    for code, g in bars.groupby("Code"):
+        g = g.set_index("Date")
+        n = len(g)
+        if n < 80:
+            continue
+        c, h, vo, rawc = g["Close"], g["High"], g["Vo"], g["RawC"]
+        f = pd.DataFrame(index=g.index)
+        f["price"] = rawc
+        f["turn_man"] = (rawc * vo).rolling(20).mean() / 1e4
+        f["ret20"] = (c / c.shift(20) - 1) * 100
+        f["ret60"] = (c / c.shift(60) - 1) * 100
+        f["range20"] = (h.rolling(20).max() / g["Low"].rolling(20).min() - 1) * 100
+        f["vol5_60"] = vo.rolling(5).mean() / vo.rolling(60).mean()
+        f["vol_today"] = vo / vo.shift(1).rolling(20).mean()
+        f["from_high"] = (c / h.rolling(250, min_periods=60).max() - 1) * 100
+        f["vola20"] = c.pct_change().rolling(20).std() * 100
+        # 財務（開示日までに公表済みのものだけ）
+        fg = fc_by_code.get(code)
+        if fg is not None and len(fg):
+            asof = pd.merge_asof(pd.DataFrame({"Date": g.index}), fg.rename(columns={"DiscDate": "Date"}),
+                                 on="Date", direction="backward")
+            sh = asof["shares"].ffill().to_numpy()
+            f["mcap_oku"] = rawc.to_numpy() * sh / 1e8
+            f["loss_fc"] = (asof["fc"].ffill() < 0).astype(float).to_numpy()
+        else:
+            f["mcap_oku"], f["loss_fc"] = np.nan, np.nan
+        rv = rev_by_code.get(code)
+        if rv is not None and len(rv):
+            d = g.index.to_numpy()
+            last = np.searchsorted(rv, d, side="right") - 1
+            days_since = np.where(last >= 0, (d - rv[np.clip(last, 0, None)]) / np.timedelta64(1, "D"), np.inf)
+            f["revised20"] = (days_since <= 28).astype(float)
+        else:
+            f["revised20"] = 0.0
+        # 目的: 翌営業日の始値で買い、その後20営業日以内に高値が2倍
+        entry = g["Open"].shift(-1)
+        fut_high = h[::-1].rolling(hz, min_periods=1).max()[::-1].shift(-1)
+        f["target"] = (fut_high >= entry * cfg["multiple"]).astype(float)
+        f["fwd_ret"] = (c.shift(-hz) / entry - 1) * 100          # 20営業日後の終値で売った場合
+        f["Code"] = code
+        idx = np.arange(60, n - hz - 1, cfg["step"])
+        out.append(f.iloc[idx])
+    t = pd.concat(out)
+    return t.replace([np.inf, -np.inf], np.nan).assign(Date=lambda x: x.index).reset_index(drop=True)
+
+
+def _lift_table(t: pd.DataFrame, base: float, label: str, col: str, edges: list) -> list[str]:
+    x = t.dropna(subset=[col])
+    cats = pd.cut(x[col], edges, right=False)
+    lines = [f"■ {label}"]
+    for cat, grp in x.groupby(cats, observed=True):
+        if len(grp) < FEATURE_CFG["min_bucket"]:
+            continue
+        rate = grp["target"].mean() * 100
+        lift = rate / base if base > 0 else float("nan")
+        mark = " ★" if lift >= 3 else " ☆" if lift >= 2 else ""
+        lines.append(f"   {str(cat):<18} {len(grp):>8}件  2倍 {int(grp['target'].sum()):>4}件 "
+                     f"({rate:5.2f}%)  リフト{lift:5.1f}倍  20日後 中央値{grp['fwd_ret'].median():+5.1f}%"
+                     f" 平均{grp['fwd_ret'].mean():+5.1f}%{mark}")
+    return lines
+
+
+def cmd_features() -> None:
+    cut = pd.Timestamp(PRE_REGISTERED["holdout_from"])
+    bars, fins = load_bars(), load_fins()
+    t = build_feature_table(bars, fins)
+    t = t[t["Date"] < cut]                                      # 探索は検証期間だけ。ホールドアウトは見ない
+    base = t["target"].mean() * 100
+    # 同じ上昇が複数の断面に重なって数えられるので、銘柄ごとに連続した陽性をまとめた「実際の上昇回数」も出す
+    pos = t[t["target"] == 1].sort_values(["Code", "Date"])
+    gap = pos.groupby("Code")["Date"].diff() > pd.Timedelta(days=FEATURE_CFG["horizon"] * 7 // 5 + 3)
+    episodes = int(pos.groupby("Code").ngroups + gap.sum()) if len(pos) else 0
+    print(f"探索データ: {t['Date'].min().date()}〜{t['Date'].max().date()}（{PRE_REGISTERED['holdout_from']}以降は"
+          f"最終確認用に未使用） / {len(t)}断面 / {t['Code'].nunique()}銘柄")
+    print(f"目的: 翌営業日の始値で買い、{FEATURE_CFG['horizon']}営業日以内に高値が{FEATURE_CFG['multiple']:.0f}倍")
+    print(f"基準の確率(全体): {base:.3f}%（{100/base:.0f}回に1回） / 2倍になった断面 {int(t['target'].sum())}件"
+          f"（実際の上昇は約{episodes}回。1回の上昇を最大{FEATURE_CFG['horizon'] // FEATURE_CFG['step']}断面で数えるため）")
+    print("リフト = その区分で2倍になる確率 ÷ 全体の確率。★3倍以上 ☆2倍以上。"
+          f"{FEATURE_CFG['min_bucket']}件未満の区分は非表示")
+    for label, (col, edges) in FEATURE_BINS.items():
+        print()
+        print("\n".join(_lift_table(t, base, label, col, edges)))
+    # 2つの特徴の組み合わせ（リフト上位）
+    combos = []
+    items = list(FEATURE_BINS.items())
+    for a in range(len(items)):
+        for b in range(a + 1, len(items)):
+            (la, (ca, ea)), (lb, (cb, eb)) = items[a], items[b]
+            x = t.dropna(subset=[ca, cb])
+            key = [pd.cut(x[ca], ea, right=False), pd.cut(x[cb], eb, right=False)]
+            for (ka, kb), grp in x.groupby(key, observed=True):
+                if len(grp) >= FEATURE_CFG["min_bucket"]:
+                    rate = grp["target"].mean() * 100
+                    combos.append((rate / base, rate, len(grp), int(grp["target"].sum()),
+                                   f"{la} {ka} × {lb} {kb}", grp["fwd_ret"].mean()))
+    combos.sort(reverse=True)
+    print("\n■ 2つの組み合わせ リフト上位10（※多数の組み合わせから選んだ上位なので偶然を含む）")
+    for lift, rate, n, k, name, fwd in combos[:10]:
+        print(f"   リフト{lift:5.1f}倍  {rate:5.2f}%  ({k}/{n})  20日後 平均{fwd:+5.1f}%  {name}")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # 動作確認（データ不要）
 # ──────────────────────────────────────────────────────────────────────────────
 def cmd_selftest() -> None:
@@ -763,5 +901,7 @@ if __name__ == "__main__":
         cmd_volspike(use_holdout=True)
     elif cmd == "doublers":
         cmd_doublers()
+    elif cmd == "features":
+        cmd_features()
     else:
         print(__doc__)
