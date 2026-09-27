@@ -22,6 +22,7 @@
   python smallcap_research.py final        # ホールドアウトで最終確認（1回だけ）
   python smallcap_research.py volspike     # 仮説2: ヨコヨコ→出来高急増 を検証期間で判定
   python smallcap_research.py volspike-final  # 仮説2のホールドアウト（1回だけ）
+  python smallcap_research.py doublers     # 事実確認: 毎月2倍になる銘柄はあるか
 """
 
 import json, os, sys, time
@@ -656,6 +657,66 @@ def cmd_volspike(use_holdout: bool) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# 6. 事実確認: 毎月2倍になる銘柄はあるか（予測ではなく、事後の集計）
+# ──────────────────────────────────────────────────────────────────────────────
+def monthly_doublers(bars: pd.DataFrame) -> pd.DataFrame:
+    """銘柄×月ごとに、前月末終値に対する 月末終値 / 月中高値 の倍率を返す。"""
+    b = bars.assign(Month=bars["Date"].dt.to_period("M"))
+    m = (b.groupby(["Code", "Month"])
+          .agg(close=("Close", "last"), high=("High", "max"), raw_close=("RawC", "last"))
+          .reset_index().sort_values(["Code", "Month"]))
+    g = m.groupby("Code")
+    m["prev_close"] = g["close"].shift(1)
+    m["prev_raw"] = g["raw_close"].shift(1)
+    m["prev_month"] = g["Month"].shift(1)
+    m = m[m["prev_month"] == m["Month"] - 1]              # 前月が連続している行だけ
+    m["close_x"] = m["close"] / m["prev_close"]
+    m["high_x"] = m["high"] / m["prev_close"]
+    m["next_close"] = m.groupby("Code")["close"].shift(-1)
+    m["next_ret"] = (m["next_close"] / m["close"] - 1) * 100   # 翌月の騰落率（月末→翌月末）
+    return m
+
+
+def cmd_doublers() -> None:
+    bars = load_bars()
+    m = monthly_doublers(bars)
+    months = sorted(m["Month"].unique())
+    print(f"データ: {bars['Date'].min().date()}〜{bars['Date'].max().date()} {bars['Code'].nunique()}銘柄"
+          f"（上場廃止銘柄を含む・株式分割は調整済み）")
+    print("倍率は前月末の終値に対する値。『終値2倍』=月末に持っていれば2倍、『高値2倍』=月中に一瞬でも2倍")
+    print()
+    print(f"{'月':<8} {'銘柄数':>6} {'終値2倍':>7} {'高値2倍':>7} {'うち前月末400円以下':>10}  最大の銘柄")
+    rows = []
+    for mo in months:
+        x = m[m["Month"] == mo]
+        c2, h2 = x[x["close_x"] >= 2], x[x["high_x"] >= 2]
+        top = x.loc[x["high_x"].idxmax()]
+        rows.append((len(c2), len(h2)))
+        partial = " (途中まで)" if mo == bars["Date"].max().to_period("M") else ""
+        print(f"{str(mo)+partial:<8} {len(x):>6} {len(c2):>7} {len(h2):>7} {int((h2['prev_raw'] <= 400).sum()):>10}"
+              f"  {top['Code']} 高値{top['high_x']:.1f}倍 / 月末{top['close_x']:.1f}倍")
+    c_months = sum(1 for c, _ in rows if c >= 1)
+    h_months = sum(1 for _, h in rows if h >= 1)
+    total = m.shape[0]
+    h2_all = m[m["high_x"] >= 2]
+    c2_all = m[m["close_x"] >= 2]
+    print()
+    print(f"月末に終値2倍の銘柄が1つ以上あった月: {c_months}/{len(rows)}か月")
+    print(f"月中に高値2倍の銘柄が1つ以上あった月: {h_months}/{len(rows)}か月")
+    print(f"銘柄×月あたりの確率: 高値2倍 {len(h2_all)/total*100:.2f}%（{total//max(len(h2_all),1)}回に1回） / "
+          f"終値2倍 {len(c2_all)/total*100:.2f}%")
+    cheap = m[m["prev_raw"] <= 400]
+    if len(cheap):
+        print(f"  前月末400円以下に限ると: 高値2倍 {(cheap['high_x'] >= 2).mean()*100:.2f}% / "
+              f"終値2倍 {(cheap['close_x'] >= 2).mean()*100:.2f}%")
+    nr = h2_all["next_ret"].dropna()
+    if len(nr):
+        print(f"高値2倍をつけた銘柄の翌月: 中央値{nr.median():+.1f}% / 下落した割合 {(nr < 0).mean()*100:.0f}% "
+              f"/ 月中高値から翌月末までの下落 中央値"
+              f"{((h2_all['next_close'] / h2_all['high'] - 1) * 100).median():+.1f}%")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # 動作確認（データ不要）
 # ──────────────────────────────────────────────────────────────────────────────
 def cmd_selftest() -> None:
@@ -700,5 +761,7 @@ if __name__ == "__main__":
         cmd_volspike(use_holdout=False)
     elif cmd == "volspike-final":
         cmd_volspike(use_holdout=True)
+    elif cmd == "doublers":
+        cmd_doublers()
     else:
         print(__doc__)
