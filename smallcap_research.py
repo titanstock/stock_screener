@@ -28,6 +28,7 @@
   python smallcap_research.py crashed      # 仮説3: 暴落済みボロ株を20営業日保有（検証期間）
   python smallcap_research.py crashed-final  # 仮説3のホールドアウト（1回だけ）
   python smallcap_research.py tenzoko      # 事実確認: 天底紐理論の「底」の予測は株で当たるか
+  python smallcap_research.py tenzoko-hold # 予測の底で買った場合の保有期間別リターン vs 対照群（探索）
 """
 
 import json, os, sys, time
@@ -999,6 +1000,7 @@ TENZOKO_CFG = {
     "cooldown":     10,     # 直前10営業日に別のブレイクがあれば数えない
     "forward_days": 20,     # ブレイク後20営業日で、節目からどこまで下がったかを見る
     "min_leg_pct":  1.0,    # f→x が1%未満の小さな動きは除外
+    "horizons":     [1, 3, 5, 10, 20],   # 予測の底で買ったあとの保有営業日数（探索用に複数）
 }
 
 
@@ -1027,17 +1029,26 @@ def tenzoko_events(g: pd.DataFrame) -> list[dict]:
         predicted_bottom = x - leg / purity
         touched = np.flatnonzero(l[b: b + fw + 1] <= predicted_bottom)
         bounce = np.nan
+        rets: dict[str, float] = {}
         if len(touched):
             k = b + touched[0]
             entry = min(o[k], predicted_bottom)                 # 予測の底に指値（寄りで下回れば始値）
             if k + 5 < n:
                 bounce = (c[k + 5] / entry - 1) * 100            # 買って5営業日後の終値
+            for hz in cfg["horizons"]:
+                rets[f"ret{hz}"] = (c[k + hz] / entry - 1) * 100 if k + hz < n else np.nan
+            # 節目 x まで戻ったら売る（20営業日以内に届かなければ20日目終値）
+            back = np.flatnonzero(h[k + 1: k + 21] >= x) if k + 20 < n else np.array([])
+            if k + 20 < n:
+                ex = max(o[k + 1 + back[0]], x) if len(back) else c[k + 20]
+                rets["ret_back"] = (ex / entry - 1) * 100
+                rets["back_hit"] = float(len(back) > 0)
         out.append({"date": g.index[b], "x": x, "purity": float(purity),
                     "leg_pct": leg / x * 100,
                     "pred_mult": 1 / purity,                      # 理論: (f→x) の何倍下がるか
                     "act_mult": (x - low_after) / leg,            # 実際: (f→x) の何倍下がったか
                     "ext_pct": (x - low_after) / x * 100,         # 節目からの下落率
-                    "touched": len(touched) > 0, "bounce5": bounce})
+                    "touched": len(touched) > 0, "bounce5": bounce, **rets})
     return out
 
 
@@ -1085,6 +1096,72 @@ def cmd_tenzoko() -> None:
         print(tenzoko_report(ev[(ev["mcap_oku"] >= lo) & (ev["mcap_oku"] < hi)], label))
     print()
     print(tenzoko_report(ev[ev["price"] <= 400], "株価400円以下"))
+
+
+def _forward_returns(g: pd.DataFrame, idx: np.ndarray, horizons: list[int]) -> dict[str, np.ndarray]:
+    c = g["Close"].to_numpy(float)
+    out = {}
+    for hz in horizons:
+        r = np.full(len(idx), np.nan)
+        ok = idx + hz < len(c)
+        r[ok] = (c[idx[ok] + hz] / c[idx[ok]] - 1) * 100
+        out[f"ret{hz}"] = r
+    return out
+
+
+def cmd_tenzoko_hold() -> None:
+    """予測の底で買った場合の保有期間別リターンを、同じ規模帯の無作為な日（対照群）と比べる。探索用。"""
+    cfg = TENZOKO_CFG
+    cut = pd.Timestamp(PRE_REGISTERED["holdout_from"])
+    bars, fins = load_bars(), load_fins()
+    bars = bars[bars["Date"] < cut + pd.Timedelta(days=45)]   # 探索期間のイベントの保有分まで
+    shares = {c: g.dropna(subset=["shares"]).set_index("DiscDate")["shares"].sort_index()
+              for c, g in fins.groupby("Code")}
+    rng = np.random.default_rng(0)
+    ev_rows, ctrl_rows = [], []
+    for code, g in bars.groupby("Code"):
+        g = g.set_index("Date")
+        sh = shares.get(code)
+
+        def mcap_at(d):
+            s2 = sh[sh.index <= d] if sh is not None else None
+            return g["RawC"].loc[d] * s2.iloc[-1] / 1e8 if s2 is not None and len(s2) else np.nan
+        for e in tenzoko_events(g):
+            if e["touched"] and e["date"] < cut:
+                e["mcap_oku"], e["price"] = mcap_at(e["date"]), g["RawC"].loc[e["date"]]
+                ev_rows.append(e)
+        cand = np.flatnonzero(g.index < cut)
+        cand = cand[cand >= 60]
+        if len(cand):
+            pick = rng.choice(cand, size=min(5, len(cand)), replace=False)
+            fr = _forward_returns(g, pick, cfg["horizons"])
+            for j, i in enumerate(pick):
+                d = g.index[i]
+                ctrl_rows.append({"mcap_oku": mcap_at(d), "price": g["RawC"].iloc[i],
+                                  **{k: v[j] for k, v in fr.items()}})
+    ev, ctrl = pd.DataFrame(ev_rows), pd.DataFrame(ctrl_rows)
+    print(f"探索データ: {PRE_REGISTERED['holdout_from']} より前のイベントのみ（ホールドアウト未使用）")
+    print("予測の底に指値で買い、N営業日後の終値で売った場合。対照群=同じ規模帯の無作為な日の終値で買い")
+    print("リターンはコスト前。目安: 大型0.2% / 小型0.6% / 400円以下1〜2%（往復）を差し引いて考える")
+    for label, mask_ev, mask_ct in [
+        ("全銘柄", ev.index == ev.index, ctrl.index == ctrl.index),
+        ("時価総額300億未満", ev["mcap_oku"] < 300, ctrl["mcap_oku"] < 300),
+        ("時価総額300億以上", ev["mcap_oku"] >= 300, ctrl["mcap_oku"] >= 300),
+        ("株価400円以下", ev["price"] <= 400, ctrl["price"] <= 400),
+    ]:
+        e, c = ev[mask_ev], ctrl[mask_ct]
+        print(f"\n■ {label}: 予測の底で買い {len(e)}件 / 対照群 {len(c)}件")
+        print(f"   {'保有':<6}{'底で買い 平均':>12}{'中央値':>8}{'勝率':>7}   {'対照群 平均':>10}{'中央値':>8}{'勝率':>7}   {'平均の差':>8}")
+        for hz in cfg["horizons"]:
+            a, b = e[f"ret{hz}"].dropna(), c[f"ret{hz}"].dropna()
+            if len(a) == 0 or len(b) == 0:
+                continue
+            print(f"   {str(hz)+'日':<6}{a.mean():>+11.2f}%{a.median():>+7.2f}%{(a > 0).mean()*100:>6.0f}%"
+                  f"   {b.mean():>+9.2f}%{b.median():>+7.2f}%{(b > 0).mean()*100:>6.0f}%   {a.mean()-b.mean():>+7.2f}%")
+        rb = e["ret_back"].dropna() if "ret_back" in e else pd.Series(dtype=float)
+        if len(rb):
+            print(f"   節目まで戻ったら売る(最大20日): 平均{rb.mean():+.2f}% 中央値{rb.median():+.2f}% "
+                  f"勝率{(rb > 0).mean()*100:.0f}% / 節目に戻れた割合 {e['back_hit'].mean()*100:.0f}%")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1144,5 +1221,7 @@ if __name__ == "__main__":
         cmd_crashed(use_holdout=True)
     elif cmd == "tenzoko":
         cmd_tenzoko()
+    elif cmd == "tenzoko-hold":
+        cmd_tenzoko_hold()
     else:
         print(__doc__)
