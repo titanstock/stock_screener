@@ -1027,11 +1027,12 @@ def tenzoko_events(g: pd.DataFrame) -> list[dict]:
             continue
         low_after = l[b: b + fw + 1].min()
         predicted_bottom = x - leg / purity
-        touched = np.flatnonzero(l[b: b + fw + 1] <= predicted_bottom)
+        # 節目割れも純度もブレイク日の大引けで確定するので、指値で買えるのは翌営業日から
+        touched = np.flatnonzero(l[b + 1: b + fw + 1] <= predicted_bottom)
         bounce = np.nan
         rets: dict[str, float] = {}
         if len(touched):
-            k = b + touched[0]
+            k = b + 1 + touched[0]
             entry = min(o[k], predicted_bottom)                 # 予測の底に指値（寄りで下回れば始値）
             if k + 5 < n:
                 bounce = (c[k + 5] / entry - 1) * 100            # 買って5営業日後の終値
@@ -1043,7 +1044,8 @@ def tenzoko_events(g: pd.DataFrame) -> list[dict]:
                 ex = max(o[k + 1 + back[0]], x) if len(back) else c[k + 20]
                 rets["ret_back"] = (ex / entry - 1) * 100
                 rets["back_hit"] = float(len(back) > 0)
-        out.append({"date": g.index[b], "x": x, "purity": float(purity),
+        out.append({"date": g.index[b], "buy_date": g.index[b + 1 + touched[0]] if len(touched) else pd.NaT,
+                    "x": x, "purity": float(purity),
                     "leg_pct": leg / x * 100,
                     "pred_mult": 1 / purity,                      # 理論: (f→x) の何倍下がるか
                     "act_mult": (x - low_after) / leg,            # 実際: (f→x) の何倍下がったか
@@ -1162,6 +1164,26 @@ def cmd_tenzoko_hold() -> None:
         if len(rb):
             print(f"   節目まで戻ったら売る(最大20日): 平均{rb.mean():+.2f}% 中央値{rb.median():+.2f}% "
                   f"勝率{(rb > 0).mean()*100:.0f}% / 節目に戻れた割合 {e['back_hit'].mean()*100:.0f}%")
+        r20 = e["ret20"].dropna()
+        if len(r20):
+            print(f"   20日保有の下位5%: {r20.quantile(0.05):+.1f}% / 最悪 {r20.min():+.1f}%")
+    # 全体相場の急落に偏っていないか: 買った日が集中した日（全銘柄の買いが平常の5倍以上の日）を除く
+    per_day = ev.groupby("buy_date").size()
+    crowded = per_day[per_day >= per_day.median() * 5].index
+    near = ev["buy_date"].isin(crowded)
+    print(f"\n■ 買いが集中した日（{len(crowded)}日: {', '.join(d.strftime('%Y-%m-%d') for d in crowded[:8])}"
+          f"{' …' if len(crowded) > 8 else ''}）に買った {int(near.sum())}件 を除くと")
+    rest = ev[~near]
+    for hz in (10, 20):
+        a = rest[f"ret{hz}"].dropna()
+        b = ctrl[f"ret{hz}"].dropna()
+        print(f"   {hz}日保有: 平均{a.mean():+.2f}% 中央値{a.median():+.2f}% 勝率{(a > 0).mean()*100:.0f}% "
+              f"（対照群 平均{b.mean():+.2f}%）")
+    print("\n■ 半期別（全銘柄・20日保有・平均）")
+    per = ev.assign(p=ev["date"].map(_period)).groupby("p")["ret20"]
+    for p, grp in per:
+        grp = grp.dropna()
+        print(f"   {p}: {len(grp)}件 平均{grp.mean():+.2f}% 中央値{grp.median():+.2f}% 勝率{(grp > 0).mean()*100:.0f}%")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
