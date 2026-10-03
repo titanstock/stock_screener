@@ -27,6 +27,7 @@
   python smallcap_research.py precursor    # 暴落済みボロ株の中で、ヨコヨコ・出来高が前触れになるか
   python smallcap_research.py crashed      # 仮説3: 暴落済みボロ株を20営業日保有（検証期間）
   python smallcap_research.py crashed-final  # 仮説3のホールドアウト（1回だけ）
+  python smallcap_research.py tenzoko      # 事実確認: 天底紐理論の「底」の予測は株で当たるか
 """
 
 import json, os, sys, time
@@ -989,6 +990,104 @@ def cmd_crashed(use_holdout: bool) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# 8. 事実確認: 天底紐理論（底 = x - (f→x) ÷ 純度）は株の日足で成り立つか
+# ──────────────────────────────────────────────────────────────────────────────
+# 本人の定義は非公開のため、次の解釈で測る（結果を見て定義は変えない）
+TENZOKO_CFG = {
+    "support_days": 20,     # 節目 x = ブレイク前20営業日の安値
+    "leg_days":     10,     # 紐の起点 f = ブレイク前10営業日の最高終値
+    "cooldown":     10,     # 直前10営業日に別のブレイクがあれば数えない
+    "forward_days": 20,     # ブレイク後20営業日で、節目からどこまで下がったかを見る
+    "min_leg_pct":  1.0,    # f→x が1%未満の小さな動きは除外
+}
+
+
+def tenzoko_events(g: pd.DataFrame) -> list[dict]:
+    """1銘柄（Date インデックス・OHLC）から、節目割れごとに予測と実際の下落を測る。"""
+    cfg = TENZOKO_CFG
+    o, h, l, c = (g[k].to_numpy(float) for k in ("Open", "High", "Low", "Close"))
+    n, sd, ld, fw = len(g), cfg["support_days"], cfg["leg_days"], cfg["forward_days"]
+    support = pd.Series(l).shift(1).rolling(sd).min().to_numpy()
+    out, last_break = [], -10**9
+    for b in range(sd + 1, n - fw):
+        if not c[b] < support[b] or b - last_break <= cfg["cooldown"]:
+            continue
+        last_break = b
+        x = support[b]
+        start = b - ld + int(np.argmax(c[b - ld: b]))          # f の位置
+        f = c[start]
+        leg = f - x
+        if leg <= 0 or leg / x * 100 < cfg["min_leg_pct"]:
+            continue
+        path = np.abs(np.diff(c[start: b + 1])).sum()
+        purity = (f - c[b]) / path if path > 0 else np.nan
+        if not purity > 0:
+            continue
+        low_after = l[b: b + fw + 1].min()
+        predicted_bottom = x - leg / purity
+        touched = np.flatnonzero(l[b: b + fw + 1] <= predicted_bottom)
+        bounce = np.nan
+        if len(touched):
+            k = b + touched[0]
+            entry = min(o[k], predicted_bottom)                 # 予測の底に指値（寄りで下回れば始値）
+            if k + 5 < n:
+                bounce = (c[k + 5] / entry - 1) * 100            # 買って5営業日後の終値
+        out.append({"date": g.index[b], "x": x, "purity": float(purity),
+                    "leg_pct": leg / x * 100,
+                    "pred_mult": 1 / purity,                      # 理論: (f→x) の何倍下がるか
+                    "act_mult": (x - low_after) / leg,            # 実際: (f→x) の何倍下がったか
+                    "ext_pct": (x - low_after) / x * 100,         # 節目からの下落率
+                    "touched": len(touched) > 0, "bounce5": bounce})
+    return out
+
+
+def tenzoko_report(ev: pd.DataFrame, title: str) -> str:
+    if ev.empty:
+        return f"■ {title}: 0件"
+    ev = ev.assign(pb=pd.cut(ev["purity"], [0, 0.2, 0.4, 0.6, 0.8, 1.0001],
+                             labels=["0〜0.2", "0.2〜0.4", "0.4〜0.6", "0.6〜0.8", "0.8〜1.0"]))
+    lines = [f"■ {title}: {len(ev)}件 / 純度と実際の倍率の順位相関 "
+             f"{ev['purity'].rank().corr(ev['act_mult'].rank()):+.2f}（理論どおりならマイナス）",
+             f"   {'純度':<8}{'件数':>6} {'理論の倍率':>8} {'実際の倍率':>8} {'節目からの下落':>10} "
+             f"{'予測の底に到達':>10} {'到達後5日':>8}"]
+    for pb, gr in ev.groupby("pb", observed=True):
+        bnc = gr["bounce5"].dropna()
+        lines.append(f"   {str(pb):<8}{len(gr):>6} {gr['pred_mult'].median():>8.2f}倍 {gr['act_mult'].median():>8.2f}倍"
+                     f" {gr['ext_pct'].median():>9.1f}% {gr['touched'].mean()*100:>9.0f}%"
+                     f" {(f'{bnc.median():+.1f}%' if len(bnc) else '-'):>9}")
+    return "\n".join(lines)
+
+
+def cmd_tenzoko() -> None:
+    bars, fins = load_bars(), load_fins()
+    shares = {c: g.dropna(subset=["shares"]).set_index("DiscDate")["shares"].sort_index()
+              for c, g in fins.groupby("Code")}
+    rows = []
+    for code, g in bars.groupby("Code"):
+        g = g.set_index("Date")
+        for e in tenzoko_events(g):
+            sh = shares.get(code)
+            sh = sh[sh.index <= e["date"]] if sh is not None else None
+            raw = g["RawC"].loc[e["date"]]
+            e["mcap_oku"] = raw * sh.iloc[-1] / 1e8 if sh is not None and len(sh) else np.nan
+            e["price"] = raw
+            rows.append(e)
+    ev = pd.DataFrame(rows)
+    print(f"データ: {bars['Date'].min().date()}〜{bars['Date'].max().date()} {bars['Code'].nunique()}銘柄（日足）")
+    print("定義: 節目x=直近20日安値 / 起点f=ブレイク前10日の最高終値 / 純度=(f-ブレイク日終値)÷その間の終値の上下動合計")
+    print("理論の倍率 = 1÷純度（節目から (f→x) の何倍下がるか）。実際の倍率 = ブレイク後20営業日の最安値で測定")
+    print("予測の底に到達後5日 = 予測の底に指値で買い、5営業日後の終値で売った場合（中央値・コスト前・参考）")
+    print()
+    print(tenzoko_report(ev, "全銘柄"))
+    for label, lo, hi in [("時価総額50億未満", 0, 50), ("50〜300億", 50, 300),
+                          ("300〜1000億", 300, 1000), ("1000億以上", 1000, np.inf)]:
+        print()
+        print(tenzoko_report(ev[(ev["mcap_oku"] >= lo) & (ev["mcap_oku"] < hi)], label))
+    print()
+    print(tenzoko_report(ev[ev["price"] <= 400], "株価400円以下"))
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # 動作確認（データ不要）
 # ──────────────────────────────────────────────────────────────────────────────
 def cmd_selftest() -> None:
@@ -1043,5 +1142,7 @@ if __name__ == "__main__":
         cmd_crashed(use_holdout=False)
     elif cmd == "crashed-final":
         cmd_crashed(use_holdout=True)
+    elif cmd == "tenzoko":
+        cmd_tenzoko()
     else:
         print(__doc__)
